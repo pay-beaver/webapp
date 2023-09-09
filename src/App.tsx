@@ -1,25 +1,30 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { Buffer } from "buffer";
+import "./App.css";
+import "@shopify/polaris/build/esm/styles.css";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import SendScreen from "./SendScreen";
+import { AppProvider } from "@shopify/polaris";
+import { I18n } from "@shopify/polaris/build/ts/src/utilities/i18n";
+import { HomeScreen } from "./HomeScreen";
+import { AddSubscriptionComponent } from "./AddSubscriptionComponent";
+
+window.Buffer = window.Buffer || require("buffer").Buffer;
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AppProvider i18n={{}}>
+      <MemoryRouter>
+        <Routes>
+          <Route index element={<HomeScreen />} />
+          <Route path="/send" element={<SendScreen />} />
+          <Route
+            path="/add-subscription"
+            element={<AddSubscriptionComponent />}
+          />
+        </Routes>
+      </MemoryRouter>
+    </AppProvider>
   );
 }
 

@@ -1,21 +1,14 @@
-import {
-  LocalAccountSigner,
-  UserOperationCallData,
-  UserOperationRequest,
-  getUserOperationHash,
-} from "@alchemy/aa-core";
 import { ERC20Token, OwnedERC20Token, Subscription } from "./types";
 import { BigNumber as PureBigNumber } from "bignumber.js";
-import {
-  ECDSAProvider,
-  SessionKeyProvider,
-  ZeroDevProvider,
-} from "@zerodev/sdk";
-import { encodeFunctionData, parseAbi } from "viem";
-import { ERC20_ABI } from "./erc20_abi";
-import { generatePrivateKey } from "viem/accounts";
 
-const USDC_TOKEN: ERC20Token = {
+export const COMP_TOKEN: ERC20Token = {
+  address: "0xA29b548056c3fD0f68BAd9d4829EC4E66f22f796",
+  name: "Compound Token",
+  symbol: "COMP",
+  decimals: 18,
+};
+
+export const USDC_TOKEN: ERC20Token = {
   address: "0x52D800ca262522580CeBAD275395ca6e7598C014",
   name: "USDC Token",
   symbol: "USDC",

@@ -1,19 +1,24 @@
 import { Box, Button } from "@shopify/polaris";
-import { getUserOwnedTokens } from "./tokens";
-import { ERC20Token, OwnedERC20Token } from "./types";
+import { ERC20Token, OwnedERC20Token, ViemChain } from "./types";
 import { useNavigate } from "react-router-dom";
+import { getChainTokens, getTokens } from "./storage";
+import { useEffect, useState } from "react";
+import { getTokenBalances } from "./tokens";
 
 function SingleTokenComponent(props: {
-  token: OwnedERC20Token;
+  ownedToken: OwnedERC20Token;
   onSend: (token: ERC20Token) => void;
 }) {
   return (
-    <div style={{ marginBottom: 24 }}>
+    <div style={{ marginBottom: 8, marginTop: 16 }}>
       <p style={{ display: "inline" }}>
-        {props.token.balance.toString()} {props.token.symbol}
+        {props.ownedToken.balance.toFixed(2)} {props.ownedToken.token.symbol}
       </p>
       <div style={{ display: "inline", float: "right" }}>
-        <Button size="micro" onClick={() => props.onSend(props.token)}>
+        <Button
+          size="micro"
+          onClick={() => props.onSend(props.ownedToken.token)}
+        >
           Send
         </Button>
       </div>
@@ -21,18 +26,37 @@ function SingleTokenComponent(props: {
   );
 }
 
-export function TokensListComponent() {
+export function TokensListComponent(props: { chain: ViemChain }) {
   const navigate = useNavigate();
-  const ownedTokens = getUserOwnedTokens();
+  const [tokens, setTokens] = useState<OwnedERC20Token[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const pureTokens = await getChainTokens(props.chain);
+      const tokensWithBalances = await getTokenBalances(
+        pureTokens,
+        props.chain,
+        "0x4bBa290826C253BD854121346c370a9886d1bC26"
+      );
+      setTokens(tokensWithBalances);
+    })();
+  }, [props.chain]);
 
   const onSend = (token: ERC20Token) => {
-    navigate(`/send`, { state: { token } });
+    navigate("/send", { state: { token } });
   };
 
   return (
     <Box>
-      {ownedTokens.map((token, index) => (
-        <SingleTokenComponent key={index} token={token} onSend={onSend} />
+      <Button
+        onClick={() =>
+          navigate("/import-token", { state: { chain: props.chain } })
+        }
+      >
+        Import token
+      </Button>
+      {tokens.map((token, index) => (
+        <SingleTokenComponent key={index} ownedToken={token} onSend={onSend} />
       ))}
     </Box>
   );

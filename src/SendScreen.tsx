@@ -3,7 +3,8 @@ import React from "react";
 import { ERC20Token } from "./types";
 import NumberField from "./NumberField";
 import { useLocation } from "react-router-dom";
-import { tryPlugin } from "./operations";
+import { sendERC20Token } from "./operations";
+import { Hex } from "viem";
 
 export default function SendScreen() {
   const [sendTo, setSendTo] = React.useState<string | null>(null);
@@ -26,7 +27,13 @@ export default function SendScreen() {
         disabled={
           selectedToken === null || sendTo === null || amountToSend === null
         }
-        onClick={() => tryPlugin()}
+        onClick={() =>
+          sendERC20Token(
+            selectedToken!,
+            sendTo! as Hex,
+            parseFloat(amountToSend!)
+          )
+        }
       >
         Send operation
       </Button>

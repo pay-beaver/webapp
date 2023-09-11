@@ -1,5 +1,10 @@
 import { baseGoerli } from "viem/chains";
-import { ERC20Token, OwnedERC20Token, ViemChain } from "./types";
+import {
+  ERC20Token,
+  NATIVE_TOKEN_ADDRESS,
+  OwnedERC20Token,
+  ViemChain,
+} from "./types";
 import { Hex, createPublicClient, http } from "viem";
 import { ERC20Abi } from "@zerodev/sdk";
 
@@ -21,6 +26,14 @@ export async function getTokenBalances(
     transport: http(),
   });
 
+  const nativeTokenIndex = tokens.findIndex(
+    (token) => token.address === NATIVE_TOKEN_ADDRESS
+  );
+  let nativeToken;
+  if (nativeTokenIndex !== -1) {
+    [nativeToken] = tokens.splice(nativeTokenIndex, 1);
+  }
+
   const result = await rpcClient.multicall({
     contracts: tokens.map((token) => ({
       address: token.address,
@@ -31,6 +44,12 @@ export async function getTokenBalances(
   });
 
   const balances = result.map((r) => r.result! as unknown as BigInt);
+
+  if (nativeTokenIndex !== -1) {
+    const nativeTokenBalance = await rpcClient.getBalance({ address });
+    balances.splice(nativeTokenIndex, 0, nativeTokenBalance);
+    tokens.splice(nativeTokenIndex, 0, nativeToken!);
+  }
 
   return tokens.map((token, index) => ({
     token,

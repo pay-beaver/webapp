@@ -1,35 +1,64 @@
-import { Button } from "@shopify/polaris";
+import { Button, Frame, Toast } from "@shopify/polaris";
 import { ERC20Token, Subscription, SupportedChain } from "./types";
-import { secondsToWord, shortenAddress } from "./utils";
+import { secondsToWord, shortenAddress, timestampNow } from "./utils";
 import { useNavigate } from "react-router-dom";
 import {
-  cancelSubscription,
+  addActivityAction,
+  cancelSubscription as cancelSubscriptionStorage,
+  getChainSubscriptions,
   getChainTokens,
-  getSubscriptions,
-  getTokens,
 } from "./storage";
 import { useEffect, useState } from "react";
 import { terminateSubscription } from "./operations";
+import { Hex } from "viem";
 
 function SinglePaymentComponent(props: {
   chain: SupportedChain;
   subscription: Subscription;
   tokens: ERC20Token[];
   canceled: boolean;
+  onCancelSuccess: () => void;
 }) {
   const [cancelling, setCancelling] = useState<boolean>(false);
-
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const token = props.tokens.find(
     (token) =>
       token.address === props.subscription.tokenAddress &&
       token.chainId === props.subscription.chainId
   );
+  const alreadyMadePayments = Math.ceil(
+    (timestampNow() - props.subscription.startedAt) /
+      props.subscription.intervalInSeconds
+  );
+  const nextPaymentTs =
+    props.subscription.startedAt +
+    alreadyMadePayments * props.subscription.intervalInSeconds;
+  const nextPaymentHumanized = new Date(nextPaymentTs * 1000).toLocaleString();
 
   const onCancel = async () => {
     setCancelling(true);
-    await terminateSubscription(props.chain, props.subscription.id);
-    cancelSubscription(props.subscription.id);
+    setErrorMessage(null);
+    let userOpHash: Hex;
+    try {
+      userOpHash = await terminateSubscription(
+        props.chain,
+        props.subscription.id
+      );
+    } catch (e) {
+      setCancelling(false);
+      setErrorMessage("Failed to cancel. Do you have enough ETH?");
+      return;
+    }
+    cancelSubscriptionStorage(props.subscription.id);
+    addActivityAction({
+      chainId: props.chain.id,
+      title: "Canceled subscription",
+      description: `Canceled "${props.subscription.name}" subscription. No more payments will be made.`,
+      timestamp: timestampNow(),
+      userOpHash,
+    });
     setCancelling(false);
+    props.onCancelSuccess();
   };
 
   return token ? (
@@ -42,6 +71,10 @@ function SinglePaymentComponent(props: {
         {secondsToWord(props.subscription.intervalInSeconds)} to{" "}
         {shortenAddress(props.subscription.to)}
       </p>
+      {!props.canceled && (
+        <p style={{ color: "black" }}>Next payment at {nextPaymentHumanized}</p>
+      )}
+      {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
       <Button
         size="micro"
         destructive
@@ -65,21 +98,23 @@ export function SubscriptionsComponent(props: { chain: SupportedChain }) {
   const [tokens, setTokens] = useState<ERC20Token[]>([]);
 
   const activeSubscriptions = subscriptions.filter(
-    (subscription) => !subscription.canceled
+    (subscription) => subscription.canceledAt === null
   );
   const canceledSubscriptions = subscriptions.filter(
-    (subscription) => subscription.canceled
+    (subscription) => subscription.canceledAt !== null
   );
 
-  useEffect(() => {
+  const loadData = () => {
     const chainTokens = getChainTokens(props.chain);
     setTokens(chainTokens);
-    const userSubscriptions = getSubscriptions();
+    const userSubscriptions = getChainSubscriptions(props.chain);
     setSubscriptions(
-      userSubscriptions.filter(
-        (subscription) => subscription.chainId === props.chain.id
-      )
+      userSubscriptions.sort((a, b) => b.startedAt - a.startedAt)
     );
+  };
+
+  useEffect(() => {
+    loadData();
   }, [props.chain]);
 
   return (
@@ -111,6 +146,7 @@ export function SubscriptionsComponent(props: { chain: SupportedChain }) {
           tokens={tokens}
           canceled={false}
           chain={props.chain}
+          onCancelSuccess={loadData}
         />
       ))}
       <p
@@ -133,6 +169,7 @@ export function SubscriptionsComponent(props: { chain: SupportedChain }) {
           tokens={tokens}
           canceled={true}
           chain={props.chain}
+          onCancelSuccess={loadData}
         />
       ))}
     </div>

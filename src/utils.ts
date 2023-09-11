@@ -5,16 +5,20 @@ export function shortenAddress(address: string): string {
 export function secondsToWord(seconds: number): string {
   switch (seconds) {
     case 60:
-      return "1 minute";
+      return "minute";
     case 5 * 60:
       return "5 minutes";
     case 24 * 60 * 60:
-      return "1 day";
+      return "day";
     case 7 * 24 * 60 * 60:
-      return "1 week";
+      return "week";
     case 30 * 24 * 60 * 60:
       return "1 month";
     default:
       return `${seconds} seconds`;
   }
+}
+
+export function timestampNow(): number {
+  return Math.floor(Date.now() / 1000);
 }

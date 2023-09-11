@@ -13,8 +13,12 @@
     "@types/react": "^18.2.21",
     "@types/react-dom": "^18.2.7",
     "@zerodev/sdk": "^4.0.10",
+    "@zerodev/wagmi": "^4.0.5",
+    "@zerodev/web3auth": "^4.0.4",
     "bignumber.js": "^9.1.2",
-    "buffer": "^6.0.3",
+    "browserify-zlib": "^0.2.0",
+    "connectkit": "^1.5.3",
+    "node-polyfill-webpack-plugin": "^2.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.15.0",
@@ -28,9 +32,9 @@
     "typescript": "^5.2.2"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -50,5 +54,17 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "assert": "^2.1.0",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.0",
+    "https-browserify": "^1.0.0",
+    "os-browserify": "^0.3.0",
+    "process": "^0.11.10",
+    "react-app-rewired": "^2.2.1",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
+    "url": "^0.11.2"
   }
 }

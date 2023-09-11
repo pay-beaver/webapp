@@ -13,6 +13,14 @@ export const SupportedChainsById = {
 };
 export const DEFAULT_CHAIN = base;
 
+export const JIFFY_SCAN_NETWORKS = {
+  [base.id]: "base",
+  [baseGoerli.id]: "base-testnet",
+};
+
+export const NATIVE_TOKEN_ADDRESS =
+  "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+
 export interface ERC20Token {
   name: string;
   symbol: string;
@@ -33,6 +41,15 @@ export interface Subscription {
   chainId: number;
   humanAmount: number;
   to: `0x${string}`;
+  startedAt: number;
   intervalInSeconds: number;
-  canceled: boolean;
+  canceledAt: number | null; // null means it's still active
+}
+
+export interface ActivityAction {
+  chainId: number;
+  title: string;
+  description: string;
+  timestamp: number;
+  userOpHash?: string;
 }

@@ -1,12 +1,24 @@
-import { Button, LegacyCard, Select, TextField } from "@shopify/polaris";
+import { Button, Select, TextField } from "@shopify/polaris";
 import { useEffect, useState } from "react";
 import { ERC20Token, Subscription, SupportedChain } from "./types";
 import NumberField from "./NumberField";
 import { getAddress, isAddress } from "viem";
-import { getChainTokens, getTokens, storeNewSubscription } from "./storage";
-import { makeMultiplePaymentOps } from "./operations";
+import {
+  addActivityAction,
+  getChainTokens,
+  getStorageSubscriptionsEnabled,
+  setStorageSubscriptionsEnabled,
+  storeNewSubscription,
+} from "./storage";
+import {
+  fullySetupSubscriptionsOnChain,
+  getOnChainSubscriptionsEnabled,
+  makeMultiplePaymentOps,
+} from "./operations";
 import { uploadSubscriptionOpsToServer } from "./serverApi";
 import { useLocation, useNavigate } from "react-router-dom";
+import { secondsToWord, shortenAddress, timestampNow } from "./utils";
+import { Header } from "./Header";
 
 const OPTIONS_FOR_INTERVAL = [
   { label: "Every 1 minute", value: 60 },
@@ -71,8 +83,9 @@ export function AddSubscriptionScreen() {
       chainId: selectedToken.chainId,
       humanAmount: parsedAmount,
       to: getAddress(recipient),
+      startedAt: timestampNow(),
       intervalInSeconds,
-      canceled: false,
+      canceledAt: null,
     };
   };
 
@@ -90,98 +103,134 @@ export function AddSubscriptionScreen() {
     setProcessingStatusText(
       "Processing the subscription. Please don't close this window."
     );
+    const storageEnabled = getStorageSubscriptionsEnabled(chain);
+    if (!storageEnabled) {
+      const onChainEnabled = await getOnChainSubscriptionsEnabled(chain);
+      if (onChainEnabled) {
+        setStorageSubscriptionsEnabled(true, chain);
+      } else {
+        setProcessingStatusText(
+          "It is your first subscription, so processing will take a little bit longer."
+        );
+        try {
+          await fullySetupSubscriptionsOnChain(chain, selectedToken!);
+        } catch (e: any) {
+          console.log("Got error while setting up a subscription", e);
+          setErrorMessage(
+            "Top up your wallet with at least 0.001 ETH to start using subscriptions"
+          );
+          setProcessingStatusText(null);
+          return;
+        }
+        setStorageSubscriptionsEnabled(true, chain);
+      }
+    }
     storeNewSubscription(subscription);
+    const startingTimestamp = timestampNow();
     const presignedOps = await makeMultiplePaymentOps(
       chain,
       selectedToken!,
       subscription.humanAmount,
       subscription.to,
       subscription.id,
+      startingTimestamp,
       subscription.intervalInSeconds,
-      100
+      1000
     );
     uploadSubscriptionOpsToServer(presignedOps);
     setProcessingStatusText("Signed you up and scheduled payments!");
+    addActivityAction({
+      chainId: chain.id,
+      title: "Started subscription",
+      description: `Started "${subscription.name}" subscription. Paying ${
+        subscription.humanAmount
+      } ${selectedToken!.symbol} every ${secondsToWord(
+        intervalInSeconds!
+      )} to ${shortenAddress(subscription.to)}`,
+      timestamp: startingTimestamp,
+    });
     setFinishedSigningUp(true);
   };
 
   return (
-    <LegacyCard>
-      <div style={{ padding: 10 }}>
-        <TextField
-          label="Subscription Name"
-          autoComplete="off"
-          value={subscriptionName}
-          onChange={setSubscriptionName}
-          disabled={processingStatusText !== null}
-        />
-        <Select
-          label="Token to send"
-          options={availableTokens.map((token) => {
-            return {
-              label: token.name,
-              value: token.address,
-            };
-          })}
-          onChange={(value) => {
-            setSelectedToken(
-              availableTokens.find((token) => token.address === value) || null
-            );
-          }}
-          value={selectedToken?.address}
-          placeholder="Select token to send"
-          disabled={processingStatusText !== null}
-        />
-        <NumberField value={amount} onChange={setAmount} />
-        <Select
-          label="Send every"
-          options={OPTIONS_FOR_INTERVAL}
-          placeholder="Select how often to send"
-          value={intervalInSeconds?.toString()}
-          onChange={(value) => {
-            const interval = parseInt(value, 10);
-            if (interval) {
-              setIntervalInSeconds(interval);
-            }
-          }}
-          disabled={processingStatusText !== null}
-        />
-        <TextField
-          label="Send to address"
-          autoComplete="off"
-          value={recipient}
-          onChange={setRecipient}
-          disabled={processingStatusText !== null}
-        />
-        {processingStatusText && (
-          <p style={{ textAlign: "center", marginTop: 10 }}>
-            {processingStatusText}
-          </p>
+    <div>
+      <Header canGoBack={true} screenTitle="Subscription" />
+      <TextField
+        label="Subscription Name"
+        autoComplete="off"
+        value={subscriptionName}
+        onChange={setSubscriptionName}
+        disabled={processingStatusText !== null}
+      />
+      <Select
+        label="Token to send"
+        options={availableTokens.map((token) => {
+          return {
+            label: token.name,
+            value: token.address,
+          };
+        })}
+        onChange={(value) => {
+          setSelectedToken(
+            availableTokens.find((token) => token.address === value) || null
+          );
+        }}
+        value={selectedToken?.address}
+        placeholder="Select token to send"
+        disabled={processingStatusText !== null}
+      />
+      <NumberField
+        label="Amount to send"
+        value={amount}
+        onChange={setAmount}
+        disabled={processingStatusText !== null}
+      />
+      <Select
+        label="Send every"
+        options={OPTIONS_FOR_INTERVAL}
+        placeholder="Select how often to send"
+        value={intervalInSeconds?.toString()}
+        onChange={(value) => {
+          const interval = parseInt(value, 10);
+          if (interval) {
+            setIntervalInSeconds(interval);
+          }
+        }}
+        disabled={processingStatusText !== null}
+      />
+      <TextField
+        label="Send to address"
+        autoComplete="off"
+        value={recipient}
+        onChange={setRecipient}
+        disabled={processingStatusText !== null}
+      />
+      {processingStatusText && (
+        <p style={{ textAlign: "center", marginTop: 10 }}>
+          {processingStatusText}
+        </p>
+      )}
+      {errorMessage && (
+        <p style={{ color: "red", textAlign: "center", marginTop: 10 }}>
+          {errorMessage}
+        </p>
+      )}
+      <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+        {!finishedSigningUp && (
+          <Button
+            primary
+            onClick={() => onDone()}
+            disabled={processingStatusText !== null}
+          >
+            Done
+          </Button>
         )}
-        {errorMessage && (
-          <p style={{ color: "red", textAlign: "center", marginTop: 10 }}>
-            {errorMessage}
-          </p>
+        {finishedSigningUp && (
+          <Button primary onClick={() => navigate(-1)}>
+            Return back home
+          </Button>
         )}
-        <div
-          style={{ display: "flex", justifyContent: "center", marginTop: 16 }}
-        >
-          {!finishedSigningUp && (
-            <Button
-              primary
-              onClick={() => onDone()}
-              disabled={processingStatusText !== null}
-            >
-              Done
-            </Button>
-          )}
-          {finishedSigningUp && (
-            <Button primary onClick={() => navigate(-1)}>
-              Return back home
-            </Button>
-          )}
-        </div>
       </div>
-    </LegacyCard>
+    </div>
   );
 }

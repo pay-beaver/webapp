@@ -48,12 +48,8 @@ const CHAIN_OPTIONS = [
 
 export function HomeScreen() {
   const [chain, setChain] = useState<SupportedChain>(getCurrentChain());
-  const [myAddress, setMyAddress] = useState<string | null>(null);
+  const myAddress = getMyAddressStorage();
   const [tabIndex, setTabIndex] = useState(0);
-
-  useEffect(() => {
-    setMyAddress(getMyAddressStorage()!);
-  }, []);
 
   const handleTabChange = useCallback(
     (selectedTabIndex: number) => setTabIndex(selectedTabIndex),
@@ -62,7 +58,11 @@ export function HomeScreen() {
 
   return (
     <div>
-      <Header canGoBack={false} screenTitle="Abstract Wallet" />
+      <Header
+        canGoBack={false}
+        screenTitle="Abstract Wallet"
+        settingsAvailable
+      />
       <div style={{ marginBottom: 4 }}>
         <HorizontalGrid columns={2}>
           <Select

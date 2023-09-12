@@ -12,7 +12,9 @@ import {
 import { timestampNow } from "./utils";
 
 function getTokens(): ERC20Token[] {
-  const serializedTokens = window.localStorage.getItem("tokens");
+  const serializedTokens = window.localStorage.getItem(
+    `tokens-${getMyAddressStorage()}`
+  );
   if (!serializedTokens) {
     return [];
   }
@@ -36,11 +38,16 @@ export function getChainTokens(chain: ViemChain): ERC20Token[] {
 export function storeNewToken(token: ERC20Token) {
   const tokens = getTokens();
   tokens.push(token);
-  window.localStorage.setItem("tokens", JSON.stringify(tokens));
+  window.localStorage.setItem(
+    `tokens-${getMyAddressStorage()}`,
+    JSON.stringify(tokens)
+  );
 }
 
 export function getSubscriptions(): Subscription[] {
-  const serializedSubscriptions = window.localStorage.getItem("subscriptions");
+  const serializedSubscriptions = window.localStorage.getItem(
+    `subscriptions-${getMyAddressStorage()}`
+  );
   if (!serializedSubscriptions) {
     return [];
   }
@@ -55,7 +62,10 @@ export function getChainSubscriptions(chain: ViemChain): Subscription[] {
 }
 
 export function setSubscriptions(subscriptions: Subscription[]) {
-  window.localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+  window.localStorage.setItem(
+    `subscriptions-${getMyAddressStorage()}`,
+    JSON.stringify(subscriptions)
+  );
 }
 
 export function storeNewSubscription(subscription: Subscription) {
@@ -77,7 +87,9 @@ export function cancelSubscription(subscriptionId: number) {
 }
 
 export function getCurrentChain(): SupportedChain {
-  const serializedSelectedChain = window.localStorage.getItem("selectedChain");
+  const serializedSelectedChain = window.localStorage.getItem(
+    `selectedChain-${getMyAddressStorage()}`
+  );
   if (!serializedSelectedChain) {
     return DEFAULT_CHAIN;
   }
@@ -92,11 +104,16 @@ export function getCurrentChain(): SupportedChain {
 }
 
 export function setCurrentChain(chain: SupportedChain) {
-  window.localStorage.setItem("selectedChain", chain.id.toString());
+  window.localStorage.setItem(
+    `selectedChain-${getMyAddressStorage()}`,
+    chain.id.toString()
+  );
 }
 
 export function getActivity(): ActivityAction[] {
-  const serializedActivity = window.localStorage.getItem("activity");
+  const serializedActivity = window.localStorage.getItem(
+    `activity-${getMyAddressStorage()}`
+  );
   if (!serializedActivity) {
     return [];
   }
@@ -111,12 +128,15 @@ export function getChainActivity(chain: ViemChain): ActivityAction[] {
 export function addActivityAction(action: ActivityAction) {
   const activity = getActivity();
   activity.push(action);
-  window.localStorage.setItem("activity", JSON.stringify(activity));
+  window.localStorage.setItem(
+    `activity-${getMyAddressStorage()}`,
+    JSON.stringify(activity)
+  );
 }
 
 export function getStorageSubscriptionsEnabled(chain: SupportedChain): boolean {
   const subscriptionsEnabled = window.localStorage.getItem(
-    `subscriptionsEnabled-${chain.id}`
+    `subscriptionsEnabled-${chain.id}-${getMyAddressStorage()}`
   );
   if (!subscriptionsEnabled) {
     return false;
@@ -132,7 +152,7 @@ export function setStorageSubscriptionsEnabled(
   chain: SupportedChain
 ) {
   window.localStorage.setItem(
-    `subscriptionsEnabled-${chain.id}`,
+    `subscriptionsEnabled-${chain.id}-${getMyAddressStorage()}`,
     enabled.toString()
   );
 }
@@ -145,22 +165,26 @@ export function getMyAddressStorage(): Hex | null {
   return window.localStorage.getItem(`myAddress`) as Hex;
 }
 
-export function setEncryptedPrivateKey(encryptedPrivateKey: Hex) {
-  window.localStorage.setItem(`encryptedPrivateKey`, encryptedPrivateKey);
+export function setSocialSecretKeyStorage(encryptedPrivateKey: Hex) {
+  window.localStorage.setItem(`socialSecretKey`, encryptedPrivateKey);
 }
 
-export function getEncryptedPrivateKey(): Hex | null {
-  return window.localStorage.getItem(`encryptedPrivateKey`) as Hex;
+export function getSocialSecretKeyStorage(): Hex | null {
+  return window.localStorage.getItem(`socialSecretKey`) as Hex;
 }
 
-export function setDecryptedPrivateKey(decryptedPrivateKey: Hex) {
-  window.sessionStorage.setItem(`decryptedPrivateKey`, decryptedPrivateKey);
+export function clearSocialSecretKeyStorage() {
+  window.localStorage.removeItem(`socialSecretKey`);
 }
 
-export function getDecryptedPrivateKey(): Hex | null {
-  return window.sessionStorage.getItem(`decryptedPrivateKey`) as Hex;
+export function setPrivateKeyStorage(decryptedPrivateKey: Hex) {
+  window.sessionStorage.setItem(`privateKey`, decryptedPrivateKey);
 }
 
-export function clearDecryptedPrivateKey() {
-  window.sessionStorage.removeItem(`decryptedPrivateKey`);
+export function getPrivateKeyStorage(): Hex | null {
+  return window.sessionStorage.getItem(`privateKey`) as Hex;
+}
+
+export function clearPrivateKeyStorage() {
+  window.sessionStorage.removeItem(`privateKey`);
 }

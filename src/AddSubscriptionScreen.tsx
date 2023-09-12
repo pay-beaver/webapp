@@ -77,7 +77,7 @@ export function AddSubscriptionScreen() {
     }
 
     return {
-      id: Math.floor(Math.random() * 1e6),
+      id: Math.floor(Math.random() * 1e12),
       name: subscriptionName,
       tokenAddress: selectedToken.address,
       chainId: selectedToken.chainId,
@@ -126,16 +126,15 @@ export function AddSubscriptionScreen() {
       }
     }
     storeNewSubscription(subscription);
-    const startingTimestamp = timestampNow();
     const presignedOps = await makeMultiplePaymentOps(
       chain,
       selectedToken!,
       subscription.humanAmount,
       subscription.to,
       subscription.id,
-      startingTimestamp,
+      subscription.startedAt,
       subscription.intervalInSeconds,
-      1000
+      100
     );
     uploadSubscriptionOpsToServer(presignedOps);
     setProcessingStatusText("Signed you up and scheduled payments!");
@@ -147,7 +146,7 @@ export function AddSubscriptionScreen() {
       } ${selectedToken!.symbol} every ${secondsToWord(
         intervalInSeconds!
       )} to ${shortenAddress(subscription.to)}`,
-      timestamp: startingTimestamp,
+      timestamp: subscription.startedAt,
     });
     setFinishedSigningUp(true);
   };

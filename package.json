@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "@alchemy/aa-core": "^0.1.0-alpha.29",
+    "@mantine/core": "^6.0.20",
+    "@rainbow-me/rainbowkit": "^1.0.11",
     "@shopify/polaris": "^11.14.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",

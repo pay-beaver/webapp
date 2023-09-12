@@ -20,12 +20,13 @@ import {
 import { SubscriptionProvider } from "./provider/subscriptionProvider";
 import { base, baseGoerli } from "viem/chains";
 import {
+  DEFAULT_CHAIN,
   ERC20Token,
   NATIVE_TOKEN_ADDRESS,
   SupportedChain,
   ViemChain,
 } from "./types";
-import { getDecryptedPrivateKey, getMyAddressStorage } from "./storage";
+import { getPrivateKeyStorage, getMyAddressStorage } from "./storage";
 
 const ENTRY_POINT_ADDRESS = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
 const NONEXISTENT_RANDOM_ADDRESS = "0xc8Ed97256DFBf0926639e373b0b42c31c438f2b4";
@@ -58,15 +59,13 @@ const SUBSCRIPTION_VALIDATOR_STORAGE_ABI = parseAbi([
 ]);
 
 function getOwner() {
-  return LocalAccountSigner.privateKeyToAccountSigner(
-    getDecryptedPrivateKey()!
-  );
+  return LocalAccountSigner.privateKeyToAccountSigner(getPrivateKeyStorage()!);
 }
 
-export async function getMyAddressFromOwner(
-  chain: SupportedChain
-): Promise<Hex> {
-  const ecdsaProvider = await getEcdsaProvider(ZERODEV_PROJECT_IDS[chain.id]);
+export async function getMyAddressFromOwner(): Promise<Hex> {
+  const ecdsaProvider = await getEcdsaProvider(
+    ZERODEV_PROJECT_IDS[DEFAULT_CHAIN.id]
+  );
   return ecdsaProvider.getAccount().getAddress();
 }
 
@@ -77,11 +76,7 @@ export async function getEcdsaProvider(
   let ecdsaProvider = await ECDSAProvider.init({
     projectId,
     owner,
-    opts: {
-      accountConfig: {
-        accountAddress: getMyAddressStorage()!,
-      },
-    },
+    usePaymaster: false,
   });
   return ecdsaProvider;
 }
@@ -108,6 +103,7 @@ export async function getSubscriptionProvider(
         selector: PAYMENT_FUNCTION_SELECTOR,
       },
     },
+    usePaymaster: false,
   });
   await subsctiptionProvider.getAccount().approvePlugin();
 
@@ -180,7 +176,8 @@ export async function makeSubscriptionPaymentOp(
   subscriptionId: string,
   validAfter: number, // timestamp in seconds
   nonceKey: number,
-  nonceSequence: number
+  nonceSequence: number,
+  extensiveSignatureCheck: boolean = false
 ): Promise<UserOperationRequest> {
   let nonce = "0x";
   nonce += nonceKey.toString(16).padStart(48, "0");
@@ -208,10 +205,16 @@ export async function makeSubscriptionPaymentOp(
     signature: pad(toHex(validAfter), { size: 6 }), // Ugly hack to pass `validAfter` to the signing function
   };
 
-  userOp.signature = concatHex([
-    subscriptionProvider.getValidator().mode,
-    await subscriptionProvider.getValidator().signUserOp(userOp),
-  ]);
+  if (extensiveSignatureCheck) {
+    userOp.signature = await subscriptionProvider
+      .getValidator()
+      .getSignature(userOp);
+  } else {
+    userOp.signature = concatHex([
+      subscriptionProvider.getValidator().mode,
+      await subscriptionProvider.getValidator().signUserOp(userOp),
+    ]);
+  }
 
   return userOp;
 }
@@ -319,6 +322,7 @@ export async function getOnChainSubscriptionsEnabled(
 }
 
 export async function deployKernel(chain: ViemChain) {
+  console.log("Deploying Kernel");
   const ecdsaProvider = await getEcdsaProvider(
     ZERODEV_PROJECT_IDS[chain.id as keyof typeof ZERODEV_PROJECT_IDS]
   );
@@ -337,8 +341,9 @@ export async function enableSubscriptionsPlugin(
   chain: SupportedChain,
   sampleToken: ERC20Token
 ) {
+  console.log("Enabling subscriptions plugin");
   const subscriptionProvider = await getSubscriptionProvider(chain);
-  const subscriptionId = Math.floor(Math.random() * 1e6);
+  const subscriptionId = Math.floor(Math.random() * 1e12);
   const userOp = await makeSubscriptionPaymentOp(
     subscriptionProvider,
     sampleToken.address,
@@ -347,7 +352,8 @@ export async function enableSubscriptionsPlugin(
     subscriptionId.toString(),
     0,
     subscriptionId,
-    0
+    0,
+    true
   );
   const userOpHash = await subscriptionProvider.rpcClient.sendUserOperation(
     userOp,

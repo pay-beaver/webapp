@@ -65,6 +65,7 @@ export default function SendScreen() {
         validatedAmountToSend
       );
     } catch (e: any) {
+      console.error("Got error when sending token", e);
       setErrorMessage(
         "Could not send the token. Make sure that your ETH balance is sufficient to pay for the operation and that your token balance is sufficient."
       );

@@ -5,15 +5,8 @@ import {
   connectorsForWallets,
 } from "@rainbow-me/rainbowkit";
 import { WagmiConfig, createConfig, useAccount, configureChains } from "wagmi";
-import { ZeroDevWeb3Auth } from "@zerodev/web3auth";
 import { Header } from "./Header";
-import {
-  Hex,
-  concatHex,
-  hashMessage,
-  keccak256,
-  recoverMessageAddress,
-} from "viem";
+import { Hex, concatHex, keccak256, recoverMessageAddress } from "viem";
 import { signMessage } from "@wagmi/core";
 import { polygonMumbai } from "wagmi/chains";
 import {
@@ -22,17 +15,18 @@ import {
   twitterWallet,
 } from "@zerodev/wagmi/rainbowkit";
 import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
-import { Box, Button, TextField } from "@shopify/polaris";
-import { HideMinor, ViewMinor } from "@shopify/polaris-icons";
+import { Button, TextField } from "@shopify/polaris";
 import {
   getPrivateKeyStorage,
   getSocialSecretKeyStorage,
   setMyAddressStorage,
   setPrivateKeyStorage,
   setSocialSecretKeyStorage,
+  storeNewToken,
 } from "./storage";
 import { useNavigate } from "react-router-dom";
 import { getMyAddressFromOwner } from "./operations";
+import { CHAIN_SETTINGS, SUPPORTED_CHAINS_LIST } from "./types";
 
 const ZERODEV_MUMBAI_PROJECT_ID = "20dc52a9-91ff-43a9-9d32-1edd3cb23aff";
 
@@ -89,6 +83,12 @@ function RealSocialWalletLoginScreen(props: {
         <li>Log in with a social account. No seed phrases.</li>
         <li>Setup subscriptions and automatically make periodic payments.</li>
       </ol>
+      <p>
+        We are extremely excited to see you using the wallet, but keep in mind
+        that it is still a beta version and breaking changes are being
+        introduced (though you can always find older versions on our github). We
+        would love if you share your feedback with us!
+      </p>
       {errorMessage && (
         <p style={{ color: "red", whiteSpace: "pre-line" }}>{errorMessage}</p>
       )}
@@ -235,6 +235,13 @@ export function LoginScreen() {
       const myAddress = await getMyAddressFromOwner();
       console.log("Logged in with address:", myAddress);
       setMyAddressStorage(myAddress);
+
+      // Probably should move somewhere else?
+      // Ensuring that there are some default tokens for the users to explore.
+      SUPPORTED_CHAINS_LIST.forEach((chain) => {
+        const defaultTokens = CHAIN_SETTINGS[chain.id].defaultERC20Tokens;
+        defaultTokens.forEach((token) => storeNewToken(token));
+      });
       navigate("/home");
     })();
   };

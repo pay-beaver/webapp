@@ -1,25 +1,45 @@
 import { Box, Button } from "@shopify/polaris";
 import {
+  CHAIN_SETTINGS,
   ERC20Token,
   NATIVE_TOKEN_ADDRESS,
   OwnedERC20Token,
   SupportedChain,
-  ViemChain,
 } from "./types";
 import { useNavigate } from "react-router-dom";
 import { getChainTokens, getMyAddressStorage } from "./storage";
 import { useEffect, useState } from "react";
 import { getTokenBalances } from "./tokens";
+import { ExternalMinor } from "@shopify/polaris-icons";
 
 function SingleTokenComponent(props: {
   ownedToken: OwnedERC20Token;
   onSend: (token: ERC20Token) => void;
 }) {
+  const chainSettings = CHAIN_SETTINGS[props.ownedToken.token.chainId];
+  const addressToOpenOnExplorer =
+    props.ownedToken.token.address === NATIVE_TOKEN_ADDRESS
+      ? getMyAddressStorage()!
+      : props.ownedToken.token.address;
+
   return (
     <div style={{ marginBottom: 8, marginTop: 16 }}>
       <p style={{ display: "inline" }}>
         {props.ownedToken.balance.toFixed(6)} {props.ownedToken.token.symbol}
       </p>
+      <div
+        onClick={() =>
+          window.open(
+            chainSettings.explorer + "address/" + addressToOpenOnExplorer
+          )
+        }
+        style={{
+          display: "inline",
+          marginLeft: 8,
+        }}
+      >
+        <ExternalMinor width="20px" />
+      </div>
       <div style={{ display: "inline", float: "right" }}>
         <Button
           size="micro"

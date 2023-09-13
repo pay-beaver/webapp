@@ -1,11 +1,17 @@
 import { Button, Select, TextField } from "@shopify/polaris";
 import { useEffect, useState } from "react";
-import { ERC20Token, Subscription, SupportedChain } from "./types";
+import {
+  ERC20Token,
+  NATIVE_TOKEN_ADDRESS,
+  Subscription,
+  SupportedChain,
+} from "./types";
 import NumberField from "./NumberField";
 import { getAddress, isAddress } from "viem";
 import {
   addActivityAction,
   getChainTokens,
+  getMyAddressStorage,
   getStorageSubscriptionsEnabled,
   setStorageSubscriptionsEnabled,
   storeNewSubscription,
@@ -19,10 +25,11 @@ import { uploadSubscriptionOpsToServer } from "./serverApi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { secondsToWord, shortenAddress, timestampNow } from "./utils";
 import { Header } from "./Header";
+import { getTokenBalances } from "./tokens";
 
 const OPTIONS_FOR_INTERVAL = [
-  { label: "Every 1 minute", value: 60 },
   { label: "Every 5 minutes", value: 60 * 5 },
+  { label: "Every hour", value: 60 * 60 },
   { label: "Every day", value: 60 * 60 * 24 },
   { label: "Every week", value: 60 * 60 * 24 * 7 },
   { label: "Every month", value: 60 * 60 * 24 * 30 },
@@ -48,7 +55,11 @@ export function AddSubscriptionScreen() {
 
   useEffect(() => {
     const tokens = getChainTokens(chain);
-    setAvailableTokens(tokens);
+    // Remove native token. Should be supported later, but currently is not.
+    const tokensWithoutNative = tokens.filter(
+      (token) => token.address !== NATIVE_TOKEN_ADDRESS
+    );
+    setAvailableTokens(tokensWithoutNative);
   }, [chain]);
 
   const validateInput = (): Subscription => {
@@ -98,11 +109,22 @@ export function AddSubscriptionScreen() {
       setErrorMessage(e.message);
       return;
     }
-
     setErrorMessage(null);
     setProcessingStatusText(
       "Processing the subscription. Please don't close this window."
     );
+
+    const tokenBalance = (
+      await getTokenBalances([selectedToken!], chain, getMyAddressStorage()!)
+    )[0].balance;
+    if (tokenBalance < subscription.humanAmount) {
+      setErrorMessage(
+        "Your token balance has to be sufficient to cover at least one payment"
+      );
+      setProcessingStatusText(null);
+      return;
+    }
+
     const storageEnabled = getStorageSubscriptionsEnabled(chain);
     if (!storageEnabled) {
       const onChainEnabled = await getOnChainSubscriptionsEnabled(chain);
@@ -117,7 +139,7 @@ export function AddSubscriptionScreen() {
         } catch (e: any) {
           console.log("Got error while setting up a subscription", e);
           setErrorMessage(
-            "Top up your wallet with at least 0.001 ETH to start using subscriptions"
+            "Top up your wallet with at least 0.004 ETH to start using subscriptions"
           );
           setProcessingStatusText(null);
           return;
@@ -136,7 +158,16 @@ export function AddSubscriptionScreen() {
       subscription.intervalInSeconds,
       100
     );
-    uploadSubscriptionOpsToServer(presignedOps);
+    try {
+      await uploadSubscriptionOpsToServer(presignedOps, subscription);
+    } catch (e: any) {
+      console.log("Got error while uploading subscription ops", e);
+      setErrorMessage(
+        "Failed to upload user operations. Please try again or contact the team."
+      );
+      setProcessingStatusText(null);
+      return;
+    }
     setProcessingStatusText("Signed you up and scheduled payments!");
     addActivityAction({
       chainId: chain.id,

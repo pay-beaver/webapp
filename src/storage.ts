@@ -37,6 +37,12 @@ export function getChainTokens(chain: ViemChain): ERC20Token[] {
 
 export function storeNewToken(token: ERC20Token) {
   const tokens = getTokens();
+  const tokenExists = tokens.some(
+    (existingToken) => existingToken.address === token.address
+  );
+  if (tokenExists) {
+    return;
+  }
   tokens.push(token);
   window.localStorage.setItem(
     `tokens-${getMyAddressStorage()}`,

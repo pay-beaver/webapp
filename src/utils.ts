@@ -8,6 +8,8 @@ export function secondsToWord(seconds: number): string {
       return "minute";
     case 5 * 60:
       return "5 minutes";
+    case 60 * 60:
+      return "hour";
     case 24 * 60 * 60:
       return "day";
     case 7 * 24 * 60 * 60:

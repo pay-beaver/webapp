@@ -20,6 +20,7 @@ import {
 import { SubscriptionProvider } from "./provider/subscriptionProvider";
 import { base, baseGoerli } from "viem/chains";
 import {
+  CHAIN_SETTINGS,
   DEFAULT_CHAIN,
   ERC20Token,
   NATIVE_TOKEN_ADDRESS,
@@ -35,9 +36,6 @@ const ZERODEV_PROJECT_IDS = {
   [baseGoerli.id]: "f0847be6-87cf-4ea6-b291-ec28dbf3e086",
   [base.id]: "9bedf0c4-17e6-4b4b-8ccb-a7e1f6e05097",
 };
-
-const VALIDATOR_ADDRESS = "0xc824Cb40e4253Ae1A7C024eFc20eD9f788645b9a";
-const EXECUTOR_ADDRESS = "0x5E1cc70f09EBe454eee8d8E7110B86e40f9fcA02";
 
 const PAYMENT_FUNCTION_SOLIDITY =
   "function payForSubscription(address _token, uint256 _amount, address _to, string calldata subscriptionId)";
@@ -85,6 +83,7 @@ export async function getSubscriptionProvider(
   chain: SupportedChain
 ): Promise<SubscriptionProvider> {
   const projectId = ZERODEV_PROJECT_IDS[chain.id];
+  const chainSettings = CHAIN_SETTINGS[chain.id];
   const owner = getOwner();
   const ecdsaProvider = await getEcdsaProvider(projectId);
   const subsctiptionProvider = await SubscriptionProvider.init({
@@ -98,8 +97,8 @@ export async function getSubscriptionProvider(
       },
       validatorConfig: {
         mode: ValidatorMode.plugin,
-        validatorAddress: VALIDATOR_ADDRESS,
-        executor: EXECUTOR_ADDRESS,
+        validatorAddress: chainSettings.validatorAddress,
+        executor: chainSettings.executorAddress,
         selector: PAYMENT_FUNCTION_SELECTOR,
       },
     },
@@ -117,7 +116,7 @@ export async function sendERC20Token(
 ): Promise<Hex> {
   const uintAmount = Math.floor(humanAmount * 10 ** token.decimals);
   const ecdsaProvider = await getEcdsaProvider(
-    ZERODEV_PROJECT_IDS[baseGoerli.id]
+    ZERODEV_PROJECT_IDS[token.chainId as keyof typeof ZERODEV_PROJECT_IDS]
   );
 
   let userOpBuildingData: UserOperationCallData;
@@ -152,8 +151,9 @@ export async function terminateSubscription(
   subscriptionId: number
 ): Promise<Hex> {
   const ecdsaProvider = await getEcdsaProvider(ZERODEV_PROJECT_IDS[chain.id]);
+  const chainSettings = CHAIN_SETTINGS[chain.id];
   const { hash } = await ecdsaProvider.sendUserOperation({
-    target: VALIDATOR_ADDRESS,
+    target: chainSettings.validatorAddress,
     data: encodeFunctionData({
       abi: TERMINATE_SUBSCRIPTION_FUNCTION_ABI,
       functionName: "terminateSubscription",
@@ -170,6 +170,7 @@ export async function terminateSubscription(
 
 export async function makeSubscriptionPaymentOp(
   subscriptionProvider: SubscriptionProvider,
+  chain: SupportedChain,
   tokenAddress: Hex,
   uintAmount: string,
   to: `0x${string}`,
@@ -179,6 +180,8 @@ export async function makeSubscriptionPaymentOp(
   nonceSequence: number,
   extensiveSignatureCheck: boolean = false
 ): Promise<UserOperationRequest> {
+  const chainSettings = CHAIN_SETTINGS[chain.id];
+
   let nonce = "0x";
   nonce += nonceKey.toString(16).padStart(48, "0");
   nonce += nonceSequence.toString(16).padStart(16, "0");
@@ -198,10 +201,10 @@ export async function makeSubscriptionPaymentOp(
     paymasterAndData: "0x",
     callGasLimit: toHex(300000),
     sender: getMyAddressStorage()!,
-    maxFeePerGas: toHex(2 * 10 ** 9),
-    maxPriorityFeePerGas: toHex(2 * 10 ** 9),
-    preVerificationGas: toHex(60000),
-    verificationGasLimit: toHex(200000),
+    maxFeePerGas: toHex(1 * 10 ** 9),
+    maxPriorityFeePerGas: toHex(0.1 * 10 ** 9), // 0.1 is the programatic minimum on Base
+    preVerificationGas: toHex(chainSettings.preVerificationGas),
+    verificationGasLimit: toHex(chainSettings.verificationGasLimit), // Base Mainnet (to save on preFunds): toHex(100000),
     signature: pad(toHex(validAfter), { size: 6 }), // Ugly hack to pass `validAfter` to the signing function
   };
 
@@ -236,6 +239,7 @@ export async function makeSubscriptionPaymentHashes(
   for (let i = 0; i < passedPaymentsCount; i++) {
     const userOp = await makeSubscriptionPaymentOp(
       subscriptionProvider,
+      chain,
       token.address,
       uintAmount,
       to,
@@ -279,6 +283,7 @@ export async function makeMultiplePaymentOps(
   for (let i = 0; i < numberOfPayments; i++) {
     const userOp = await makeSubscriptionPaymentOp(
       subscriptionProvider,
+      chain,
       token.address,
       uintAmount,
       to,
@@ -300,8 +305,9 @@ export async function getOnChainSubscriptionsEnabled(
     chain: chain,
     transport: http(),
   });
+  const chainSettings = CHAIN_SETTINGS[chain.id];
   const result = await rpcClient.call({
-    to: VALIDATOR_ADDRESS,
+    to: chainSettings.validatorAddress,
     data: encodeFunctionData({
       abi: SUBSCRIPTION_VALIDATOR_STORAGE_ABI,
       functionName: "subscriptionValidatorStorage",
@@ -346,6 +352,7 @@ export async function enableSubscriptionsPlugin(
   const subscriptionId = Math.floor(Math.random() * 1e12);
   const userOp = await makeSubscriptionPaymentOp(
     subscriptionProvider,
+    chain,
     sampleToken.address,
     "0",
     NONEXISTENT_RANDOM_ADDRESS,

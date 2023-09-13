@@ -39,4 +39,4 @@ But then it means you can execute all my 1000 pre-signed operations immediately 
 
 ## Technical side
 
-Abstract Wallet is build on top of Zerodev's Kernel smart contract. Kernel is an audited an secure smart contract that is responsible for keeping your tokens under your and only your control. Subscriptions are implemented as a _plugin_ for Kernel. You can find the code for the plugin validator and executor in the contracts repo.
+Abstract Wallet is build on top of Zerodev's Kernel smart contract. Kernel is an audited an secure smart contract that is responsible for keeping your tokens under your and only your control. Subscriptions are implemented as a _plugin_ for Kernel. You can find the code for the plugin validator and executor in the [contracts repo](https://github.com/Abstract-Wallet/abstract-wallet-contracts).

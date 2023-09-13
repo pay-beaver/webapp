@@ -26,7 +26,7 @@ export const CHAIN_SETTINGS: { [chainId: number]: ChainSettings } = {
   [base.id]: {
     validatorAddress: "0x5E1cc70f09EBe454eee8d8E7110B86e40f9fcA02",
     executorAddress: "0xc824Cb40e4253Ae1A7C024eFc20eD9f788645b9a",
-    preVerificationGas: 100000,
+    preVerificationGas: 2000000,
     verificationGasLimit: 100000,
     defaultERC20Tokens: [
       {

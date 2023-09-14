@@ -104,7 +104,6 @@ export function AddSubscriptionScreen() {
     let subscription: Subscription;
     try {
       subscription = validateInput();
-      console.log("Subscription", subscription);
     } catch (e: any) {
       setErrorMessage(e.message);
       return;
@@ -137,7 +136,6 @@ export function AddSubscriptionScreen() {
         try {
           await fullySetupSubscriptionsOnChain(chain, selectedToken!);
         } catch (e: any) {
-          console.log("Got error while setting up a subscription", e);
           setErrorMessage(
             "Top up your wallet with at least 0.004 ETH to start using subscriptions"
           );
@@ -178,6 +176,7 @@ export function AddSubscriptionScreen() {
         intervalInSeconds!
       )} to ${shortenAddress(subscription.to)}`,
       timestamp: subscription.startedAt,
+      activityType: "start-subscription",
     });
     setFinishedSigningUp(true);
   };

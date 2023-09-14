@@ -6,6 +6,7 @@ import {
 } from "./types";
 import { useEffect, useState } from "react";
 import {
+  addActivityAction,
   getActivity,
   getChainSubscriptions,
   getChainTokens,
@@ -15,16 +16,15 @@ import { CircleInformationMajor } from "@shopify/polaris-icons";
 import { Scrollable, Spinner, Tooltip } from "@shopify/polaris";
 import { shortenAddress, timestampNow } from "./utils";
 import {
+  get4337RpcClient,
   getSubscriptionProvider,
-  makeSubscriptionPaymentHashes,
+  makeSubscriptionPaymentHash,
 } from "./operations";
 
-async function generateSubscriptionPaymentActions(
-  chain: SupportedChain
-): Promise<ActivityAction[]> {
+async function generateSubscriptionPaymentActions(chain: SupportedChain) {
   const subscriptions = getChainSubscriptions(chain);
-  const actions: ActivityAction[] = [];
   const subscriptionProvider = await getSubscriptionProvider(chain); // Ugly, but doing it here to reduce time costs
+  const rpcClient = await get4337RpcClient(chain);
   for (const sub of subscriptions) {
     const tokens = getChainTokens(
       SupportedChainsById[sub.chainId as keyof typeof SupportedChainsById]
@@ -32,45 +32,59 @@ async function generateSubscriptionPaymentActions(
     const token = tokens.find(
       (token) =>
         token.address === sub.tokenAddress && token.chainId === chain.id
+    )!;
+
+    const alreadyProcessedPayments = getActivity().filter(
+      (action) =>
+        action.activityType === "subscription-payment" &&
+        action.chainId === chain.id &&
+        action.details.subscriptionId === sub.id
     );
-    if (!token) {
-      actions.push({
-        chainId: chain.id,
-        title: "Missing token",
-        description: `Please import ${sub.tokenAddress} token to see subscription ${sub.name} activity`,
-        timestamp: 9999999999,
-      });
-      continue;
+    let startTimestamp = sub.startedAt;
+    if (alreadyProcessedPayments.length > 0) {
+      startTimestamp = alreadyProcessedPayments.sort(
+        (a, b) => b.timestamp - a.timestamp
+      )[0].timestamp;
+
+      // We don't want to process the same payment that has already been processed
+      startTimestamp += sub.intervalInSeconds;
     }
+
     let endTs = timestampNow();
     if (sub.canceledAt !== null) endTs = sub.canceledAt;
-    const passedPaymentsCount = Math.ceil(
-      (endTs - sub.startedAt) / sub.intervalInSeconds
+    const possibleNewPaymentsCount = Math.ceil(
+      (endTs - startTimestamp) / sub.intervalInSeconds
     );
-    const userOpHashes = await makeSubscriptionPaymentHashes(
-      subscriptionProvider,
-      SupportedChainsById[chain.id as keyof typeof SupportedChainsById],
-      token,
-      sub.humanAmount,
-      sub.to,
-      sub.id,
-      sub.startedAt,
-      sub.intervalInSeconds,
-      passedPaymentsCount
-    );
-    for (let i = 0; i < passedPaymentsCount; i++) {
-      actions.push({
+    for (let i = 0; i < possibleNewPaymentsCount; i++) {
+      const opHash = await makeSubscriptionPaymentHash(
+        subscriptionProvider,
+        SupportedChainsById[chain.id as keyof typeof SupportedChainsById],
+        token,
+        sub.humanAmount,
+        sub.to,
+        sub.id,
+        alreadyProcessedPayments.length + i
+      );
+
+      const userOp = await rpcClient.getUserOperationByHash(opHash);
+      if (userOp === null) {
+        break; // There can't be anymore payments after a failed pament
+      }
+      addActivityAction({
         chainId: chain.id,
         title: "Subscription payment",
         description: `Paid ${sub.humanAmount.toFixed(6)} ${
           token?.symbol
         } for subscription ${sub.name} to ${shortenAddress(sub.to)}`,
-        timestamp: sub.startedAt + i * sub.intervalInSeconds,
-        userOpHash: userOpHashes[i],
+        timestamp: startTimestamp + i * sub.intervalInSeconds,
+        userOpHash: opHash,
+        activityType: "subscription-payment",
+        details: {
+          subscriptionId: sub.id,
+        },
       });
     }
   }
-  return actions;
 }
 
 function ActionComponent(props: { action: ActivityAction }) {
@@ -116,12 +130,9 @@ export function ActivityComponent(props: { chain: SupportedChain }) {
   const [finishedLoading, setFinishedLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    (async () => {
-      const subscriptionPaymentActions =
-        await generateSubscriptionPaymentActions(props.chain);
+    const readAndSetActivity = async () => {
       setActivity(
         getActivity()
-          .concat(subscriptionPaymentActions)
           .filter((action) => action.chainId === props.chain.id)
           .sort((a, b) => {
             const tsDiff = b.timestamp - a.timestamp;
@@ -129,15 +140,18 @@ export function ActivityComponent(props: { chain: SupportedChain }) {
             return "Subscription payment" === a.title ? -1 : 1;
           })
       );
+    };
+
+    readAndSetActivity(); // preload
+    (async () => {
+      await generateSubscriptionPaymentActions(props.chain);
+      readAndSetActivity();
       setFinishedLoading(true);
     })();
   }, [props.chain]);
 
   return (
     <div>
-      {activity.map((action, index) => (
-        <ActionComponent key={index} action={action} />
-      ))}
       {!finishedLoading && (
         <div
           style={{
@@ -149,6 +163,9 @@ export function ActivityComponent(props: { chain: SupportedChain }) {
           <Spinner accessibilityLabel="Loading your activity" size="small" />
         </div>
       )}
+      {activity.map((action, index) => (
+        <ActionComponent key={index} action={action} />
+      ))}
       {activity.length === 0 && finishedLoading && (
         <p style={{ color: "grey" }}>No activity yet</p>
       )}

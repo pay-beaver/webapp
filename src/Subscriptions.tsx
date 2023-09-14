@@ -56,6 +56,7 @@ function SinglePaymentComponent(props: {
       description: `Canceled "${props.subscription.name}" subscription. No more payments will be made.`,
       timestamp: timestampNow(),
       userOpHash,
+      activityType: "start-subscription",
     });
     setCancelling(false);
     props.onCancelSuccess();

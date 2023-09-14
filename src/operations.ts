@@ -1,7 +1,9 @@
 import {
   LocalAccountSigner,
+  PublicErc4337Client,
   UserOperationCallData,
   UserOperationRequest,
+  createPublicErc4337Client,
   getUserOperationHash,
 } from "@alchemy/aa-core";
 import { ECDSAProvider, ERC20Abi, ValidatorMode } from "@zerodev/sdk";
@@ -77,6 +79,13 @@ export async function getEcdsaProvider(
     usePaymaster: false,
   });
   return ecdsaProvider;
+}
+
+export async function get4337RpcClient(
+  chain: SupportedChain
+): Promise<PublicErc4337Client> {
+  const ecdsaProvider = await getEcdsaProvider(ZERODEV_PROJECT_IDS[chain.id]);
+  return ecdsaProvider.rpcClient;
 }
 
 export async function getSubscriptionProvider(
@@ -222,46 +231,39 @@ export async function makeSubscriptionPaymentOp(
   return userOp;
 }
 
-export async function makeSubscriptionPaymentHashes(
+export async function makeSubscriptionPaymentHash(
   subscriptionProvider: SubscriptionProvider,
   chain: SupportedChain,
   token: ERC20Token,
   humanAmount: number,
   to: Hex,
   subscriptionId: number,
-  startingTimestamp: number,
-  intervalInSeconds: number,
-  passedPaymentsCount: number
-): Promise<Hex[]> {
+  subscriptionSequence: number
+): Promise<Hex> {
   const uintAmount = Math.floor(humanAmount * 10 ** token.decimals).toFixed(0);
 
-  const hashes: Hex[] = [];
-  for (let i = 0; i < passedPaymentsCount; i++) {
-    const userOp = await makeSubscriptionPaymentOp(
-      subscriptionProvider,
-      chain,
-      token.address,
-      uintAmount,
-      to,
-      subscriptionId.toString(),
-      startingTimestamp + intervalInSeconds * i,
-      subscriptionId,
-      i
-    );
+  const userOp = await makeSubscriptionPaymentOp(
+    subscriptionProvider,
+    chain,
+    token.address,
+    uintAmount,
+    to,
+    subscriptionId.toString(),
+    0, // Doesn't matter for the hash
+    subscriptionId,
+    subscriptionSequence
+  );
 
-    const hash = getUserOperationHash(
-      {
-        ...userOp,
-        signature: "0x",
-      },
-      ENTRY_POINT_ADDRESS,
-      BigInt(chain.id)
-    ) as Hex;
+  const hash = getUserOperationHash(
+    {
+      ...userOp,
+      signature: "0x",
+    },
+    ENTRY_POINT_ADDRESS,
+    BigInt(chain.id)
+  ) as Hex;
 
-    hashes.push(hash);
-  }
-
-  return hashes;
+  return hash;
 }
 
 export async function makeMultiplePaymentOps(

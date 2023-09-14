@@ -80,6 +80,7 @@ export default function SendScreen() {
       } to ${shortenAddress(validatedSendTo!)}`,
       timestamp: timestampNow(),
       userOpHash,
+      activityType: "start-subscription",
     });
     setProcessingStatusText(null);
     setSentUserOpHash(userOpHash);

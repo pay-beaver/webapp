@@ -23,6 +23,12 @@ export const NATIVE_TOKEN_ADDRESS =
 
 export const ZERODEV_MUMBAI_PROJECT_ID = "20dc52a9-91ff-43a9-9d32-1edd3cb23aff";
 
+export type ActivityType =
+  | "start-subscription"
+  | "subscription-payment"
+  | "cancel-subscription"
+  | "transfer";
+
 // Make a constant mapping of chain id to chain settings
 export const CHAIN_SETTINGS: { [chainId: number]: ChainSettings } = {
   [base.id]: {
@@ -93,6 +99,8 @@ export interface ActivityAction {
   description: string;
   timestamp: number;
   userOpHash?: string;
+  activityType: ActivityType;
+  details?: any;
 }
 
 export interface ChainSettings {

@@ -133,6 +133,23 @@ export function getChainActivity(chain: ViemChain): ActivityAction[] {
 
 export function addActivityAction(action: ActivityAction) {
   const activity = getActivity();
+
+  const paymentExists = activity.some(
+    // Don't add duplicate subscription payments
+    (existingAction) =>
+      existingAction.chainId === action.chainId &&
+      existingAction.timestamp === action.timestamp &&
+      existingAction.details?.subscriptionId ===
+        action.details?.subscriptionId &&
+      existingAction.activityType === "subscription-payment" &&
+      action.activityType === "subscription-payment"
+  );
+
+  if (paymentExists) {
+    console.log("Duplicate subscription payment was not added", action);
+    return;
+  }
+
   activity.push(action);
   window.localStorage.setItem(
     `activity-${getMyAddressStorage()}`,

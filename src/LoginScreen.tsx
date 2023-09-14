@@ -62,7 +62,7 @@ function SocialWalletLoginScreen(props: {
       } catch (e) {
         console.log("Error while deriving the social secret key:", e);
         setErrorMessage(
-          "We are very sorry, but there was some error with logging you in.\n Please try again or choose a different social network."
+          "We are very sorry, but there was some error with logging you in.\n Please try again or choose a different social network or log in with a private key."
         );
         return;
       }
@@ -192,8 +192,6 @@ export function LoginScreen() {
 
   const onPasswordSubmit = (password: string) => {
     (async () => {
-      console.log("Password:", password);
-
       const utf8Encode = new TextEncoder();
       const passwordHash = keccak256(utf8Encode.encode(password));
 

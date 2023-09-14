@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ConnectButton,
   RainbowKitProvider,
@@ -15,7 +15,7 @@ import {
   twitterWallet,
 } from "@zerodev/wagmi/rainbowkit";
 import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
-import { Button, TextField } from "@shopify/polaris";
+import { Button, Spinner, TextField } from "@shopify/polaris";
 import {
   getPrivateKeyStorage,
   getSocialSecretKeyStorage,
@@ -32,14 +32,7 @@ import {
   ZERODEV_MUMBAI_PROJECT_ID,
 } from "./types";
 import { ZeroDevWeb3Auth } from "@zerodev/web3auth";
-
-async function deriveSocialSecretKey(): Promise<Hex> {
-  const zeroDevWeb3Auth = new ZeroDevWeb3Auth(ZERODEV_MUMBAI_PROJECT_ID);
-  const privateKey = await zeroDevWeb3Auth.provider.request({
-    method: "eth_private_key", // use "private_key" for other non-evm chains
-  });
-  return `0x${privateKey}`;
-}
+import { Web3Auth } from "@web3auth/modal";
 
 function SocialWalletLoginScreen(props: {
   onLogedIn: (socialSecretKey: Hex) => void;
@@ -48,27 +41,39 @@ function SocialWalletLoginScreen(props: {
   // I call it secret (not private) key because it's not a key to the user's funds without a password,
   // plus it's stored in the unencrypted local browser storage (so it's not treated 100% safely).
   const navigate = useNavigate();
-  const { isConnected } = useAccount();
   const [errorMessage, setErrorMessage] = useState<string>("");
+  let web3auth = useRef<Web3Auth | null>(null);
+  const [web3authInitialized, setWeb3authInitialized] =
+    useState<boolean>(false);
 
   useEffect(() => {
-    if (!isConnected) return;
-    console.log("Connected! Validating the signer.");
-
     (async () => {
-      let socialSecretKey;
-      try {
-        socialSecretKey = await deriveSocialSecretKey();
-      } catch (e) {
-        console.log("Error while deriving the social secret key:", e);
-        setErrorMessage(
-          "We are very sorry, but there was some error with logging you in.\n Please try again or choose a different social network or log in with a private key."
-        );
-        return;
-      }
-      props.onLogedIn(socialSecretKey);
+      //Initialize within your constructor
+      web3auth.current = new Web3Auth({
+        clientId:
+          "BNYFspU1CjXS6E7c2-YhZPX8FfshYKkMAk8kHGPvVyo7Bdls5X6JKSZD0iqJFT2_QAhglWeNGq0kkSB_CArHs-k", // Get your Client ID from Web3Auth Dashboard
+        chainConfig: {
+          chainNamespace: "eip155",
+          chainId: "0x1", // Please use 0x5 for Goerli Testnet
+          rpcTarget: "https://eth.llamarpc.com",
+        },
+        authMode: "WALLET",
+        web3AuthNetwork: "testnet",
+      });
+      await web3auth.current.initModal();
+      setWeb3authInitialized(true);
     })();
-  }, [isConnected, props]);
+  }, []);
+
+  const onLogin = async () => {
+    if (!web3auth.current) return;
+
+    await web3auth.current!.connect();
+    const socialSecretKey = await web3auth.current.provider?.request({
+      method: "eth_private_key",
+    });
+    props.onLogedIn(socialSecretKey as Hex);
+  };
 
   return (
     <div>
@@ -98,7 +103,7 @@ function SocialWalletLoginScreen(props: {
           height: "100px",
         }}
       >
-        {isConnected ? (
+        {false ? (
           <p>Connected.</p>
         ) : (
           <div
@@ -109,7 +114,13 @@ function SocialWalletLoginScreen(props: {
               marginTop: 32,
             }}
           >
-            <ConnectButton label="Connect" />
+            {web3authInitialized ? (
+              <Button primary onClick={onLogin}>
+                Log in
+              </Button>
+            ) : (
+              <Spinner size="small" />
+            )}
             <p style={{ marginTop: 8 }}>
               Alternatively:{" "}
               <span

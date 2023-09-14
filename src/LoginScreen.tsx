@@ -26,10 +26,12 @@ import {
 } from "./storage";
 import { useNavigate } from "react-router-dom";
 import { getMyAddressFromOwner } from "./operations";
-import { CHAIN_SETTINGS, SUPPORTED_CHAINS_LIST } from "./types";
+import {
+  CHAIN_SETTINGS,
+  SUPPORTED_CHAINS_LIST,
+  ZERODEV_MUMBAI_PROJECT_ID,
+} from "./types";
 import { ZeroDevWeb3Auth } from "@zerodev/web3auth";
-
-const ZERODEV_MUMBAI_PROJECT_ID = "20dc52a9-91ff-43a9-9d32-1edd3cb23aff";
 
 async function deriveSocialSecretKey(): Promise<Hex> {
   const zeroDevWeb3Auth = new ZeroDevWeb3Auth(ZERODEV_MUMBAI_PROJECT_ID);
@@ -39,9 +41,13 @@ async function deriveSocialSecretKey(): Promise<Hex> {
   return `0x${privateKey}`;
 }
 
-function RealSocialWalletLoginScreen(props: {
+function SocialWalletLoginScreen(props: {
   onLogedIn: (socialSecretKey: Hex) => void;
 }) {
+  // Prompt the user to connect a social network and obtain their social secret key.
+  // I call it secret (not private) key because it's not a key to the user's funds without a password,
+  // plus it's stored in the unencrypted local browser storage (so it's not treated 100% safely).
+  const navigate = useNavigate();
   const { isConnected } = useAccount();
   const [errorMessage, setErrorMessage] = useState<string>("");
 
@@ -92,61 +98,32 @@ function RealSocialWalletLoginScreen(props: {
           height: "100px",
         }}
       >
-        {isConnected ? <p>Connected.</p> : <ConnectButton label="Connect" />}
+        {isConnected ? (
+          <p>Connected.</p>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              marginTop: 32,
+            }}
+          >
+            <ConnectButton label="Connect" />
+            <p style={{ marginTop: 8 }}>
+              Alternatively:{" "}
+              <span
+                onClick={() => navigate("/private-key-login")}
+                style={{ color: "blue", textDecoration: "underline" }}
+              >
+                log in
+              </span>{" "}
+              with a private key
+            </p>
+          </div>
+        )}
       </div>
     </div>
-  );
-}
-
-export function SocialWalletLoginScreen(props: {
-  onLogedIn: (socialSecretKey: Hex) => void;
-}) {
-  // Prompt the user to connect a social network and obtain their social secret key.
-  // I call it secret (not private) key because it's not a key to the user's funds without a password,
-  // plus it's stored in the unencrypted local browser storage (so it's not treated 100% safely).
-
-  const { chains, publicClient, webSocketPublicClient } = configureChains(
-    [polygonMumbai], // Chain doesn't matter because we use a custom signer later anyway
-    [
-      jsonRpcProvider({
-        rpc: (chain) => ({ http: "https://rpc-mumbai.maticvigil.com" }), // We only need mumbai
-      }),
-    ]
-  );
-
-  const connectors = connectorsForWallets([
-    {
-      groupName: "Social",
-      wallets: [
-        googleWallet({
-          chains,
-          options: { projectId: ZERODEV_MUMBAI_PROJECT_ID },
-        }),
-        githubWallet({
-          chains,
-          options: { projectId: ZERODEV_MUMBAI_PROJECT_ID },
-        }),
-        twitterWallet({
-          chains,
-          options: { projectId: ZERODEV_MUMBAI_PROJECT_ID },
-        }),
-      ],
-    },
-  ]);
-
-  const config = createConfig({
-    autoConnect: false,
-    connectors,
-    publicClient,
-    webSocketPublicClient,
-  });
-
-  return (
-    <WagmiConfig config={config}>
-      <RainbowKitProvider chains={chains} modalSize="compact">
-        <RealSocialWalletLoginScreen onLogedIn={props.onLogedIn} />
-      </RainbowKitProvider>
-    </WagmiConfig>
   );
 }
 

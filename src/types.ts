@@ -21,6 +21,8 @@ export const JIFFY_SCAN_NETWORKS = {
 export const NATIVE_TOKEN_ADDRESS =
   "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
+export const ZERODEV_MUMBAI_PROJECT_ID = "20dc52a9-91ff-43a9-9d32-1edd3cb23aff";
+
 // Make a constant mapping of chain id to chain settings
 export const CHAIN_SETTINGS: { [chainId: number]: ChainSettings } = {
   [base.id]: {

@@ -1,9 +1,9 @@
 import { Chain, Formatters, Hex } from "viem";
-import { ChainConfig } from "viem/dist/types/types/chain";
-import { Assign } from "viem/dist/types/types/utils";
+// import { ChainConfig } from "viem/dist/types/types/chain";
+// import { Assign } from "viem/dist/types/types/utils";
 import { base, baseGoerli } from "viem/chains";
 
-export type ViemChain = Assign<Chain, ChainConfig<Formatters>>;
+export type ViemChain = any;
 
 export type SupportedChain = typeof base | typeof baseGoerli;
 export const SUPPORTED_CHAINS_LIST: SupportedChain[] = [base, baseGoerli];

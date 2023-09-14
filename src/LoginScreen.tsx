@@ -27,26 +27,16 @@ import {
 import { useNavigate } from "react-router-dom";
 import { getMyAddressFromOwner } from "./operations";
 import { CHAIN_SETTINGS, SUPPORTED_CHAINS_LIST } from "./types";
+import { ZeroDevWeb3Auth } from "@zerodev/web3auth";
 
 const ZERODEV_MUMBAI_PROJECT_ID = "20dc52a9-91ff-43a9-9d32-1edd3cb23aff";
 
 async function deriveSocialSecretKey(): Promise<Hex> {
-  // I have no idea on how to get the secret key directly from the social wallet
-  // So doing it this way:
-  // 1. Take the social wallet
-  // 2. Sign a sample message with it (can be anything, but has to be consistent across app versions)
-  // 3. Hash the signature with keccak256 and get our 32 byte secret key
-
-  const sampleMessage = "Abstract Wallet social login message"; // Can be anything
-  const signature = await signMessage({
-    message: sampleMessage,
+  const zeroDevWeb3Auth = new ZeroDevWeb3Auth(ZERODEV_MUMBAI_PROJECT_ID);
+  const privateKey = await zeroDevWeb3Auth.provider.request({
+    method: "eth_private_key", // use "private_key" for other non-evm chains
   });
-  await recoverMessageAddress({
-    // Also check that the signature is valid
-    message: sampleMessage,
-    signature: signature as Hex,
-  });
-  return keccak256(signature);
+  return `0x${privateKey}`;
 }
 
 function RealSocialWalletLoginScreen(props: {
@@ -64,6 +54,7 @@ function RealSocialWalletLoginScreen(props: {
       try {
         socialSecretKey = await deriveSocialSecretKey();
       } catch (e) {
+        console.log("Error while deriving the social secret key:", e);
         setErrorMessage(
           "We are very sorry, but there was some error with logging you in.\n Please try again or choose a different social network."
         );

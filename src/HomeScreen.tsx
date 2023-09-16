@@ -69,7 +69,7 @@ export function HomeScreen() {
     <div>
       <Header
         canGoBack={false}
-        screenTitle="Beaver Wallet"
+        screenTitle="Beaver (ex. Abstract) Wallet"
         settingsAvailable
       />
       <div style={{ marginBottom: 4 }}>

@@ -1,12 +1,26 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   ConnectButton,
   RainbowKitProvider,
   connectorsForWallets,
 } from "@rainbow-me/rainbowkit";
-import { WagmiConfig, createConfig, useAccount, configureChains } from "wagmi";
+import {
+  WagmiConfig,
+  createConfig,
+  useAccount,
+  configureChains,
+} from "wagmi";
 import { Header } from "./Header";
-import { Hex, concatHex, keccak256, recoverMessageAddress } from "viem";
+import {
+  Hex,
+  concatHex,
+  keccak256,
+  recoverMessageAddress,
+} from "viem";
 import { signMessage } from "@wagmi/core";
 import { polygonMumbai } from "wagmi/chains";
 import {
@@ -15,7 +29,11 @@ import {
   twitterWallet,
 } from "@zerodev/wagmi/rainbowkit";
 import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
-import { Button, Spinner, TextField } from "@shopify/polaris";
+import {
+  Button,
+  Spinner,
+  TextField,
+} from "@shopify/polaris";
 import {
   getPrivateKeyStorage,
   getSocialSecretKeyStorage,
@@ -41,10 +59,13 @@ function SocialWalletLoginScreen(props: {
   // I call it secret (not private) key because it's not a key to the user's funds without a password,
   // plus it's stored in the unencrypted local browser storage (so it's not treated 100% safely).
   const navigate = useNavigate();
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] =
+    useState<string>("");
   let web3auth = useRef<Web3Auth | null>(null);
-  const [web3authInitialized, setWeb3authInitialized] =
-    useState<boolean>(false);
+  const [
+    web3authInitialized,
+    setWeb3authInitialized,
+  ] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
@@ -69,30 +90,48 @@ function SocialWalletLoginScreen(props: {
     if (!web3auth.current) return;
 
     await web3auth.current!.connect();
-    const socialSecretKey = await web3auth.current.provider?.request({
-      method: "eth_private_key",
-    });
+    const socialSecretKey =
+      await web3auth.current.provider?.request({
+        method: "eth_private_key",
+      });
     props.onLogedIn(socialSecretKey as Hex);
   };
 
   return (
     <div>
       <p style={{ marginTop: "20px" }}>
-        Welcome to Abstract Wallet! A wallet that makes interaction with
-        blockchains easy while keeping it secure. Key features:
+        Welcome to Beaver Wallet! A wallet that
+        makes interaction with blockchains easy
+        while keeping it secure. Key features:
       </p>
       <ol>
-        <li>Log in with a social account. No seed phrases.</li>
-        <li>Setup subscriptions and automatically make periodic payments.</li>
+        <li>
+          Log in with a social account. No seed
+          phrases.
+        </li>
+        <li>
+          Setup subscriptions and automatically
+          make periodic payments.
+        </li>
       </ol>
       <p>
-        We are extremely excited to see you using the wallet, but keep in mind
-        that it is still a beta version and breaking changes are being
-        introduced (though you can always find older versions on our github). We
-        would love if you share your feedback with us!
+        We are extremely excited to see you using
+        the wallet, but keep in mind that it is
+        still a beta version and breaking changes
+        are being introduced (though you can
+        always find older versions on our github).
+        We would love if you share your feedback
+        with us!
       </p>
       {errorMessage && (
-        <p style={{ color: "red", whiteSpace: "pre-line" }}>{errorMessage}</p>
+        <p
+          style={{
+            color: "red",
+            whiteSpace: "pre-line",
+          }}
+        >
+          {errorMessage}
+        </p>
       )}
       <div
         style={{
@@ -124,8 +163,13 @@ function SocialWalletLoginScreen(props: {
             <p style={{ marginTop: 8 }}>
               Alternatively:{" "}
               <span
-                onClick={() => navigate("/private-key-login")}
-                style={{ color: "blue", textDecoration: "underline" }}
+                onClick={() =>
+                  navigate("/private-key-login")
+                }
+                style={{
+                  color: "blue",
+                  textDecoration: "underline",
+                }}
               >
                 log in
               </span>{" "}
@@ -141,8 +185,10 @@ function SocialWalletLoginScreen(props: {
 function PasswordLoginScreen(props: {
   onPasswordSubmit: (password: string) => void;
 }) {
-  const [passwordShown, setPasswordShown] = useState<boolean>(false);
-  const [password, setPassword] = useState<string>("");
+  const [passwordShown, setPasswordShown] =
+    useState<boolean>(false);
+  const [password, setPassword] =
+    useState<string>("");
 
   return (
     <div
@@ -155,17 +201,24 @@ function PasswordLoginScreen(props: {
       <div>
         <p>Now please enter your password.</p>
         <p style={{ marginBottom: 16 }}>
-          If it is your first time using Abstract Wallet, create a new password
-          and make sure it's long and hard to guess.
+          If it is your first time using Beaver
+          Wallet, create a new password and make
+          sure it's long and hard to guess.
         </p>
         <TextField
           label="Password"
-          type={passwordShown ? "text" : "password"}
+          type={
+            passwordShown ? "text" : "password"
+          }
           value={password}
           onChange={setPassword}
           autoComplete="on"
           connectedRight={
-            <Button onClick={() => setPasswordShown(!passwordShown)}>
+            <Button
+              onClick={() =>
+                setPasswordShown(!passwordShown)
+              }
+            >
               {passwordShown ? "Hide" : "Show"}
             </Button>
           }
@@ -178,7 +231,12 @@ function PasswordLoginScreen(props: {
             marginTop: 16,
           }}
         >
-          <Button primary onClick={() => props.onPasswordSubmit(password)}>
+          <Button
+            primary
+            onClick={() =>
+              props.onPasswordSubmit(password)
+            }
+          >
             Submit
           </Button>
         </div>
@@ -189,13 +247,15 @@ function PasswordLoginScreen(props: {
 
 export function LoginScreen() {
   const navigate = useNavigate();
-  const [socialSecretKey, setSocialSecretKey] = useState<Hex | null>(null);
+  const [socialSecretKey, setSocialSecretKey] =
+    useState<Hex | null>(null);
 
   useEffect(() => {
     if (getPrivateKeyStorage() !== null) {
       navigate("/home"); // we are fully logged in
     }
-    const socialSecretKey = getSocialSecretKeyStorage();
+    const socialSecretKey =
+      getSocialSecretKeyStorage();
     if (socialSecretKey !== null) {
       setSocialSecretKey(socialSecretKey);
     }
@@ -204,20 +264,35 @@ export function LoginScreen() {
   const onPasswordSubmit = (password: string) => {
     (async () => {
       const utf8Encode = new TextEncoder();
-      const passwordHash = keccak256(utf8Encode.encode(password));
+      const passwordHash = keccak256(
+        utf8Encode.encode(password)
+      );
 
-      const privateKey = keccak256(concatHex([socialSecretKey!, passwordHash]));
+      const privateKey = keccak256(
+        concatHex([
+          socialSecretKey!,
+          passwordHash,
+        ])
+      );
       setPrivateKeyStorage(privateKey);
 
-      const myAddress = await getMyAddressFromOwner();
-      console.log("Logged in with address:", myAddress);
+      const myAddress =
+        await getMyAddressFromOwner();
+      console.log(
+        "Logged in with address:",
+        myAddress
+      );
       setMyAddressStorage(myAddress);
 
       // Probably should move somewhere else?
       // Ensuring that there are some default tokens for the users to explore.
       SUPPORTED_CHAINS_LIST.forEach((chain) => {
-        const defaultTokens = CHAIN_SETTINGS[chain.id].defaultERC20Tokens;
-        defaultTokens.forEach((token) => storeNewToken(token));
+        const defaultTokens =
+          CHAIN_SETTINGS[chain.id]
+            .defaultERC20Tokens;
+        defaultTokens.forEach((token) =>
+          storeNewToken(token)
+        );
       });
       navigate("/home");
     })();
@@ -230,11 +305,18 @@ export function LoginScreen() {
 
   return (
     <div>
-      <Header canGoBack={false} screenTitle="Abstract Wallet" />
+      <Header
+        canGoBack={false}
+        screenTitle="Beaver Wallet"
+      />
       {socialSecretKey ? (
-        <PasswordLoginScreen onPasswordSubmit={onPasswordSubmit} />
+        <PasswordLoginScreen
+          onPasswordSubmit={onPasswordSubmit}
+        />
       ) : (
-        <SocialWalletLoginScreen onLogedIn={onLoggedIn} />
+        <SocialWalletLoginScreen
+          onLogedIn={onLoggedIn}
+        />
       )}
     </div>
   );

@@ -5,12 +5,19 @@ import {
   Select,
   Tooltip,
 } from "@shopify/polaris";
-import { useState, useCallback, useEffect } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import { TokensListComponent } from "./TokensList";
 import { SubscriptionsComponent } from "./Subscriptions";
 import { ActivityComponent } from "./Activity";
 import { base, baseGoerli } from "viem/chains";
-import { SUPPORTED_CHAINS_LIST, SupportedChain } from "./types";
+import {
+  SUPPORTED_CHAINS_LIST,
+  SupportedChain,
+} from "./types";
 import { shortenAddress } from "./utils";
 import { getMyAddressFromOwner } from "./operations";
 import {
@@ -47,12 +54,14 @@ const CHAIN_OPTIONS = [
 ];
 
 export function HomeScreen() {
-  const [chain, setChain] = useState<SupportedChain>(getCurrentChain());
+  const [chain, setChain] =
+    useState<SupportedChain>(getCurrentChain());
   const myAddress = getMyAddressStorage();
   const [tabIndex, setTabIndex] = useState(0);
 
   const handleTabChange = useCallback(
-    (selectedTabIndex: number) => setTabIndex(selectedTabIndex),
+    (selectedTabIndex: number) =>
+      setTabIndex(selectedTabIndex),
     []
   );
 
@@ -60,7 +69,7 @@ export function HomeScreen() {
     <div>
       <Header
         canGoBack={false}
-        screenTitle="Abstract Wallet"
+        screenTitle="Beaver Wallet"
         settingsAvailable
       />
       <div style={{ marginBottom: 4 }}>
@@ -69,9 +78,11 @@ export function HomeScreen() {
             label=""
             options={CHAIN_OPTIONS}
             onChange={(value) => {
-              const newSelectedChain = SUPPORTED_CHAINS_LIST.find(
-                (chain) => chain.id.toString() === value
-              );
+              const newSelectedChain =
+                SUPPORTED_CHAINS_LIST.find(
+                  (chain) =>
+                    chain.id.toString() === value
+                );
               setChain(newSelectedChain!);
               setCurrentChain(newSelectedChain!);
             }}
@@ -84,9 +95,19 @@ export function HomeScreen() {
               justifyContent: "center",
             }}
           >
-            <Tooltip content={myAddress} width="wide">
-              <p style={{ paddingTop: 8, textDecoration: "underline" }}>
-                {myAddress ? shortenAddress(myAddress) : "Loading..."}
+            <Tooltip
+              content={myAddress}
+              width="wide"
+            >
+              <p
+                style={{
+                  paddingTop: 8,
+                  textDecoration: "underline",
+                }}
+              >
+                {myAddress
+                  ? shortenAddress(myAddress)
+                  : "Loading..."}
               </p>
             </Tooltip>
           </div>
@@ -99,11 +120,16 @@ export function HomeScreen() {
         fitted
       >
         <LegacyCard.Section>
-          {HOME_TABS[tabIndex].id === "tokens-tab" ? (
+          {HOME_TABS[tabIndex].id ===
+          "tokens-tab" ? (
             <TokensListComponent chain={chain} />
-          ) : HOME_TABS[tabIndex].id === "subscriptions-tab" ? (
-            <SubscriptionsComponent chain={chain} />
-          ) : HOME_TABS[tabIndex].id === "activity-tab" ? (
+          ) : HOME_TABS[tabIndex].id ===
+            "subscriptions-tab" ? (
+            <SubscriptionsComponent
+              chain={chain}
+            />
+          ) : HOME_TABS[tabIndex].id ===
+            "activity-tab" ? (
             <ActivityComponent chain={chain} />
           ) : null}
         </LegacyCard.Section>

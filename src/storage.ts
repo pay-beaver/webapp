@@ -12,16 +12,21 @@ import {
 import { timestampNow } from "./utils";
 
 function getTokens(): ERC20Token[] {
-  const serializedTokens = window.localStorage.getItem(
-    `tokens-${getMyAddressStorage()}`
-  );
+  const serializedTokens =
+    window.localStorage.getItem(
+      `tokens-${getMyAddressStorage()}`
+    );
   if (!serializedTokens) {
     return [];
   }
-  return JSON.parse(serializedTokens) as ERC20Token[];
+  return JSON.parse(
+    serializedTokens
+  ) as ERC20Token[];
 }
 
-export function getChainTokens(chain: ViemChain): ERC20Token[] {
+export function getChainTokens(
+  chain: ViemChain
+): ERC20Token[] {
   const tokens = getTokens();
   const nativeToken: ERC20Token = {
     name: chain.nativeCurrency.name,
@@ -38,7 +43,8 @@ export function getChainTokens(chain: ViemChain): ERC20Token[] {
 export function storeNewToken(token: ERC20Token) {
   const tokens = getTokens();
   const tokenExists = tokens.some(
-    (existingToken) => existingToken.address === token.address
+    (existingToken) =>
+      existingToken.address === token.address
   );
   if (tokenExists) {
     return;
@@ -51,65 +57,86 @@ export function storeNewToken(token: ERC20Token) {
 }
 
 export function getSubscriptions(): Subscription[] {
-  const serializedSubscriptions = window.localStorage.getItem(
-    `subscriptions-${getMyAddressStorage()}`
-  );
+  const serializedSubscriptions =
+    window.localStorage.getItem(
+      `subscriptions-${getMyAddressStorage()}`
+    );
   if (!serializedSubscriptions) {
     return [];
   }
   return JSON.parse(serializedSubscriptions);
 }
 
-export function getChainSubscriptions(chain: ViemChain): Subscription[] {
+export function getChainSubscriptions(
+  chain: ViemChain
+): Subscription[] {
   const subscriptions = getSubscriptions();
   return subscriptions.filter(
-    (subscription) => subscription.chainId === chain.id
+    (subscription) =>
+      subscription.chainId === chain.id
   );
 }
 
-export function setSubscriptions(subscriptions: Subscription[]) {
+export function setSubscriptions(
+  subscriptions: Subscription[]
+) {
   window.localStorage.setItem(
     `subscriptions-${getMyAddressStorage()}`,
     JSON.stringify(subscriptions)
   );
 }
 
-export function storeNewSubscription(subscription: Subscription) {
+export function storeNewSubscription(
+  subscription: Subscription
+) {
   const subscriptions = getSubscriptions();
   subscriptions.push(subscription);
   setSubscriptions(subscriptions);
 }
 
-export function cancelSubscription(subscriptionId: number) {
+export function cancelSubscription(
+  subscriptionId: number
+) {
   const subscriptions = getSubscriptions();
   const toCancelIndex = subscriptions.findIndex(
-    (subscription) => subscription.id === subscriptionId
+    (subscription) =>
+      subscription.id === subscriptionId
   );
   if (toCancelIndex === -1) {
-    throw new Error("Subscription to cancel not found");
+    throw new Error(
+      "Subscription to cancel not found"
+    );
   }
-  subscriptions[toCancelIndex].canceledAt = timestampNow();
+  subscriptions[toCancelIndex].canceledAt =
+    timestampNow();
   setSubscriptions(subscriptions);
 }
 
 export function getCurrentChain(): SupportedChain {
-  const serializedSelectedChain = window.localStorage.getItem(
-    `selectedChain-${getMyAddressStorage()}`
-  );
+  const serializedSelectedChain =
+    window.localStorage.getItem(
+      `selectedChain-${getMyAddressStorage()}`
+    );
   if (!serializedSelectedChain) {
     return DEFAULT_CHAIN;
   }
 
-  const chainId = parseInt(serializedSelectedChain);
+  const chainId = parseInt(
+    serializedSelectedChain
+  );
   const selectedChain =
-    SupportedChainsById[chainId as keyof typeof SupportedChainsById];
+    SupportedChainsById[
+      chainId as keyof typeof SupportedChainsById
+    ];
   if (!selectedChain) {
     return DEFAULT_CHAIN;
   }
   return selectedChain;
 }
 
-export function setCurrentChain(chain: SupportedChain) {
+export function setCurrentChain(
+  chain: SupportedChain
+) {
   window.localStorage.setItem(
     `selectedChain-${getMyAddressStorage()}`,
     chain.id.toString()
@@ -117,36 +144,49 @@ export function setCurrentChain(chain: SupportedChain) {
 }
 
 export function getActivity(): ActivityAction[] {
-  const serializedActivity = window.localStorage.getItem(
-    `activity-${getMyAddressStorage()}`
-  );
+  const serializedActivity =
+    window.localStorage.getItem(
+      `activity-${getMyAddressStorage()}`
+    );
   if (!serializedActivity) {
     return [];
   }
   return JSON.parse(serializedActivity);
 }
 
-export function getChainActivity(chain: ViemChain): ActivityAction[] {
+export function getChainActivity(
+  chain: ViemChain
+): ActivityAction[] {
   const activity = getActivity();
-  return activity.filter((activity) => activity.chainId === chain.id);
+  return activity.filter(
+    (activity) => activity.chainId === chain.id
+  );
 }
 
-export function addActivityAction(action: ActivityAction) {
+export function addActivityAction(
+  action: ActivityAction
+) {
   const activity = getActivity();
 
   const paymentExists = activity.some(
     // Don't add duplicate subscription payments
     (existingAction) =>
       existingAction.chainId === action.chainId &&
-      existingAction.timestamp === action.timestamp &&
+      existingAction.timestamp ===
+        action.timestamp &&
       existingAction.details?.subscriptionId ===
         action.details?.subscriptionId &&
-      existingAction.activityType === "subscription-payment" &&
-      action.activityType === "subscription-payment"
+      existingAction.activityType ===
+        "subscription-payment" &&
+      action.activityType ===
+        "subscription-payment"
   );
 
   if (paymentExists) {
-    console.log("Duplicate subscription payment was not added", action);
+    console.log(
+      "Duplicate subscription payment was not added",
+      action
+    );
     return;
   }
 
@@ -157,10 +197,15 @@ export function addActivityAction(action: ActivityAction) {
   );
 }
 
-export function getStorageSubscriptionsEnabled(chain: SupportedChain): boolean {
-  const subscriptionsEnabled = window.localStorage.getItem(
-    `subscriptionsEnabled-${chain.id}-${getMyAddressStorage()}`
-  );
+export function getStorageSubscriptionsEnabled(
+  chain: SupportedChain
+): boolean {
+  const subscriptionsEnabled =
+    window.localStorage.getItem(
+      `subscriptionsEnabled-${
+        chain.id
+      }-${getMyAddressStorage()}`
+    );
   if (!subscriptionsEnabled) {
     return false;
   }
@@ -175,37 +220,41 @@ export function setStorageSubscriptionsEnabled(
   chain: SupportedChain
 ) {
   window.localStorage.setItem(
-    `subscriptionsEnabled-${chain.id}-${getMyAddressStorage()}`,
+    `subscriptionsEnabled-${
+      chain.id
+    }-${getMyAddressStorage()}`,
     enabled.toString()
   );
 }
 
-export function setMyAddressStorage(myAddress: Hex) {
-  window.localStorage.setItem(`myAddress`, myAddress);
+export function setMyAddressStorage(
+  myAddress: Hex
+) {
+  window.localStorage.setItem(
+    `myAddress`,
+    myAddress
+  );
 }
 
 export function getMyAddressStorage(): Hex | null {
-  return window.localStorage.getItem(`myAddress`) as Hex;
+  return window.localStorage.getItem(
+    `myAddress`
+  ) as Hex;
 }
 
-export function setSocialSecretKeyStorage(encryptedPrivateKey: Hex) {
-  window.localStorage.setItem(`socialSecretKey`, encryptedPrivateKey);
-}
-
-export function getSocialSecretKeyStorage(): Hex | null {
-  return window.localStorage.getItem(`socialSecretKey`) as Hex;
-}
-
-export function clearSocialSecretKeyStorage() {
-  window.localStorage.removeItem(`socialSecretKey`);
-}
-
-export function setPrivateKeyStorage(decryptedPrivateKey: Hex) {
-  window.sessionStorage.setItem(`privateKey`, decryptedPrivateKey);
+export function setPrivateKeyStorage(
+  decryptedPrivateKey: Hex
+) {
+  window.sessionStorage.setItem(
+    `privateKey`,
+    decryptedPrivateKey
+  );
 }
 
 export function getPrivateKeyStorage(): Hex | null {
-  return window.sessionStorage.getItem(`privateKey`) as Hex;
+  return window.sessionStorage.getItem(
+    `privateKey`
+  ) as Hex;
 }
 
 export function clearPrivateKeyStorage() {

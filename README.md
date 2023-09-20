@@ -1,4 +1,4 @@
-# Beaver (ex. Abstract) Wallet - subscriptions in erc-4337
+# Beaver Wallet - subscriptions in erc-4337
 
 A erc-4337 based wallet that allows users to make periodic payments while keeping funds in full self custody.
 

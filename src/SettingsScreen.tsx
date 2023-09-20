@@ -2,34 +2,50 @@ import { Button } from "@shopify/polaris";
 import { Header } from "./Header";
 import {
   clearPrivateKeyStorage,
-  clearSocialSecretKeyStorage,
   getPrivateKeyStorage,
 } from "./storage";
 import { useState } from "react";
 
 export function SettingsScreen() {
-  const [privateKey, setPrivateKey] = useState<string>("");
+  const [privateKey, setPrivateKey] =
+    useState<string>("");
 
   const onLogOut = () => {
     clearPrivateKeyStorage();
-    clearSocialSecretKeyStorage();
     window.location.href = "/";
   };
 
   const onShowPrivateKey = () => {
-    setPrivateKey(getPrivateKeyStorage()!.slice(2));
+    setPrivateKey(
+      getPrivateKeyStorage()!.slice(2)
+    );
   };
 
   return (
     <div>
-      <Header canGoBack={true} screenTitle="Settings" />
-      <Button onClick={onShowPrivateKey}>Show my private key</Button>
+      <button
+        onClick={onShowPrivateKey}
+        style={{
+          padding: 8,
+          paddingLeft: 12,
+          paddingRight: 12,
+          borderRadius: 8,
+          borderWidth: 0,
+          backgroundColor:
+            "rgba(255, 255, 255, 0.1)",
+          marginLeft: "auto",
+          color: "white",
+        }}
+      >
+        Show my private key
+      </button>
       {privateKey && (
-        <div style={{ marginTop: 16 }}>
+        <div style={{ marginTop: 8 }}>
           <p>Your private key is:</p>
           <p
             style={{
               lineBreak: "anywhere",
+              color: "white",
             }}
           >
             {privateKey}
@@ -37,7 +53,22 @@ export function SettingsScreen() {
         </div>
       )}
       <div style={{ height: 24 }} />
-      <Button onClick={onLogOut}>Log out</Button>
+      <button
+        onClick={onLogOut}
+        style={{
+          padding: 8,
+          paddingLeft: 12,
+          paddingRight: 12,
+          borderRadius: 8,
+          borderWidth: 0,
+          backgroundColor:
+            "rgba(255, 255, 255, 0.1)",
+          marginLeft: "auto",
+          color: "white",
+        }}
+      >
+        Log out
+      </button>
     </div>
   );
 }

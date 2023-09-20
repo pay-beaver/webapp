@@ -1,4 +1,5 @@
 import {
+  useContext,
   useEffect,
   useRef,
   useState,
@@ -23,6 +24,7 @@ import {
   SupportedChainsList,
 } from "./types";
 import { Web3Auth } from "@web3auth/modal";
+import { SettingsContext } from "./GeneralSettings";
 
 function SocialWalletLoginScreen(props: {
   onLogedIn: (privateKey: Hex) => void;
@@ -159,6 +161,8 @@ function SocialWalletLoginScreen(props: {
 
 export function LoginScreen() {
   const navigate = useNavigate();
+  const { isLoggedIn, setIsLoggedIn } =
+    useContext(SettingsContext);
 
   const postLogin = async (privateKey: Hex) => {
     setPrivateKeyStorage(privateKey);
@@ -181,16 +185,14 @@ export function LoginScreen() {
         storeNewToken(token)
       );
     });
+    setIsLoggedIn(true);
     navigate("/overview");
   };
 
   useEffect(() => {
-    if (getPrivateKeyStorage() !== null) {
-      navigate("/overview"); // we are fully logged in
-    }
-    const privateKey = getPrivateKeyStorage();
-    if (privateKey !== null) {
-      postLogin(privateKey);
+    if (isLoggedIn) {
+      const privateKey = getPrivateKeyStorage();
+      postLogin(privateKey!);
     }
   }, []);
 

@@ -240,6 +240,10 @@ export function getMyAddressStorage(): Hex | null {
   ) as Hex;
 }
 
+export function clearMyAddressStorage() {
+  window.localStorage.removeItem(`myAddress`);
+}
+
 export function setPrivateKeyStorage(
   decryptedPrivateKey: Hex
 ) {

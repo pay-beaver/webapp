@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Header } from "./Header";
 import {
   Button,
@@ -14,10 +14,15 @@ import { useNavigate } from "react-router-dom";
 import { getMyAddressFromOwner } from "./operations";
 import {
   ChainsSettings,
+  PrimaryColor,
   SupportedChainsList,
 } from "./types";
+import { SettingsContext } from "./GeneralSettings";
 
 export function PrivateKeyLoginScreen() {
+  const { setIsLoggedIn } = useContext(
+    SettingsContext
+  );
   const navigate = useNavigate();
   const [privateKey, setPrivateKey] =
     useState<string>("");
@@ -65,15 +70,12 @@ export function PrivateKeyLoginScreen() {
         storeNewToken(token)
       );
     });
+    setIsLoggedIn(true);
     navigate("/overview");
   };
 
   return (
     <div>
-      <Header
-        canGoBack={true}
-        screenTitle="Private key login"
-      />
       <p
         style={{
           marginTop: 16,
@@ -84,16 +86,50 @@ export function PrivateKeyLoginScreen() {
         generate a new one. Store it securely. Key
         is a 64 symbols hexadecimal string.
       </p>
-      <TextField
+      <p
+        style={{
+          color: "white",
+          marginBottom: 8,
+          marginTop: 24,
+          width: 400,
+        }}
+      >
+        Private key
+      </p>
+      <input
         autoComplete="off"
-        label="Private key"
         value={privateKey}
-        onChange={setPrivateKey}
+        onChange={(event) =>
+          setPrivateKey(event.target.value)
+        }
+        style={{
+          backgroundColor:
+            "rgba(255, 255, 255, 0.2)",
+          color: "white",
+          borderWidth: 0,
+          padding: 8,
+          borderRadius: 6,
+          width: 400,
+        }}
+        placeholder="Your hexadecimal private key"
       />
       <div style={{ height: 16 }} />
-      <Button onClick={onGenerateNewPrivateKey}>
+      <button
+        onClick={onGenerateNewPrivateKey}
+        style={{
+          padding: 8,
+          paddingLeft: 12,
+          paddingRight: 12,
+          borderRadius: 8,
+          borderWidth: 0,
+          backgroundColor:
+            "rgba(255, 255, 255, 0.1)",
+          marginLeft: "auto",
+          color: "white",
+        }}
+      >
         Generate new private key
-      </Button>
+      </button>
       <div
         style={{
           display: "flex",
@@ -112,9 +148,21 @@ export function PrivateKeyLoginScreen() {
             {errorMessage}
           </p>
         )}
-        <Button primary onClick={onLogIn}>
+        <button
+          onClick={onLogIn}
+          style={{
+            backgroundColor: `${PrimaryColor}BB`,
+            borderWidth: 0,
+            padding: 8,
+            paddingLeft: 16,
+            paddingRight: 16,
+            borderRadius: 6,
+            color: "white",
+            fontSize: 16,
+          }}
+        >
           Log in
-        </Button>
+        </button>
       </div>
     </div>
   );

@@ -136,4 +136,6 @@ export interface ChainSettings {
 export interface GeneralSettings {
   chain: SupportedChain;
   setChain: (chainId: number) => void;
+  isLoggedIn: boolean;
+  setIsLoggedIn: (isLoggedIn: boolean) => void;
 }

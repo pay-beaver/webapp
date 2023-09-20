@@ -1,9 +1,9 @@
 import { Hex } from "viem";
 import {
   ActivityAction,
-  DEFAULT_CHAIN,
+  DefaultChain,
   ERC20Token,
-  NATIVE_TOKEN_ADDRESS,
+  NativeTokenAddress,
   Subscription,
   SupportedChain,
   SupportedChainsById,
@@ -33,7 +33,7 @@ export function getChainTokens(
     symbol: chain.nativeCurrency.symbol,
     decimals: chain.nativeCurrency.decimals,
     chainId: chain.id,
-    address: NATIVE_TOKEN_ADDRESS,
+    address: NativeTokenAddress,
   };
   return tokens
     .filter((token) => token.chainId === chain.id)
@@ -118,7 +118,7 @@ export function getCurrentChain(): SupportedChain {
       `selectedChain-${getMyAddressStorage()}`
     );
   if (!serializedSelectedChain) {
-    return DEFAULT_CHAIN;
+    return DefaultChain;
   }
 
   const chainId = parseInt(
@@ -129,17 +129,15 @@ export function getCurrentChain(): SupportedChain {
       chainId as keyof typeof SupportedChainsById
     ];
   if (!selectedChain) {
-    return DEFAULT_CHAIN;
+    return DefaultChain;
   }
   return selectedChain;
 }
 
-export function setCurrentChain(
-  chain: SupportedChain
-) {
+export function setCurrentChain(chainId: number) {
   window.localStorage.setItem(
     `selectedChain-${getMyAddressStorage()}`,
-    chain.id.toString()
+    chainId.toString()
   );
 }
 

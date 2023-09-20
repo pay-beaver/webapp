@@ -1,52 +1,127 @@
 import "./App.css";
 import "@shopify/polaris/build/esm/styles.css";
 import "@rainbow-me/rainbowkit/styles.css";
-import { BrowserRouter, MemoryRouter, Route, Routes } from "react-router-dom";
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+} from "react-router-dom";
 import SendScreen from "./SendScreen";
-import { AppProvider, LegacyCard, Scrollable } from "@shopify/polaris";
-import { HomeScreen } from "./HomeScreen";
+import { AppProvider } from "@shopify/polaris";
+import { OverviewScreen } from "./OverviewScreen";
 import { AddSubscriptionScreen } from "./AddSubscriptionScreen";
 import { ImportTokenScreen } from "./ImportTokenScreen";
 import { LoginScreen } from "./LoginScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { PrivateKeyLoginScreen } from "./PrivateKeyLoginScreen";
-import { useEffect } from "react";
-import { Web3Auth } from "@web3auth/modal";
+import { CoreFrame } from "./CoreFrame";
+import { SettingsWrapper } from "./GeneralSettings";
+import { ActivityComponent } from "./Activity";
+import { SubscriptionsComponent } from "./Subscriptions";
 
-window.Buffer = window.Buffer || require("buffer").Buffer;
+window.Buffer =
+  window.Buffer || require("buffer").Buffer;
 
 function App() {
   return (
     <AppProvider i18n={{}}>
-      <div
-        style={{
-          backgroundColor: "white",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "center",
-        }}
-      >
-        <Scrollable style={{ height: "100vh", width: "500px", padding: 10 }}>
-          <MemoryRouter>
-            <Routes>
-              <Route index element={<LoginScreen />} />
-              <Route
-                path="/private-key-login"
-                element={<PrivateKeyLoginScreen />}
-              />
-              <Route path="/home" element={<HomeScreen />} />
-              <Route path="/send" element={<SendScreen />} />
-              <Route
-                path="/add-subscription"
-                element={<AddSubscriptionScreen />}
-              />
-              <Route path="/import-token" element={<ImportTokenScreen />} />
-              <Route path="/settings" element={<SettingsScreen />} />
-            </Routes>
-          </MemoryRouter>
-        </Scrollable>
-      </div>
+      <SettingsWrapper>
+        <MemoryRouter>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <CoreFrame
+                  element={<LoginScreen />}
+                  headerTitle="Beaver Wallet"
+                />
+              }
+            />
+            <Route
+              path="/private-key-login"
+              element={
+                <CoreFrame
+                  element={
+                    <PrivateKeyLoginScreen />
+                  }
+                  headerTitle="Beaver Wallet"
+                  canGoBack
+                />
+              }
+            />
+            <Route
+              path="/overview"
+              element={
+                <CoreFrame
+                  element={<OverviewScreen />}
+                  headerTitle="Beaver Wallet"
+                />
+              }
+            />
+            <Route
+              path="/send"
+              element={
+                <CoreFrame
+                  element={<SendScreen />}
+                  headerTitle="Send token"
+                  canGoBack
+                />
+              }
+            />
+            <Route
+              path="/add-subscription"
+              element={
+                <CoreFrame
+                  element={
+                    <AddSubscriptionScreen />
+                  }
+                  headerTitle="Add subscription"
+                  canGoBack
+                />
+              }
+            />
+            <Route
+              path="/import-token"
+              element={
+                <CoreFrame
+                  element={<ImportTokenScreen />}
+                  headerTitle="Import token"
+                  canGoBack
+                />
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <CoreFrame
+                  element={<SettingsScreen />}
+                  headerTitle="Settings"
+                />
+              }
+            />
+            <Route
+              path="/activity"
+              element={
+                <CoreFrame
+                  element={<ActivityComponent />}
+                  headerTitle="Activity history"
+                />
+              }
+            />
+            <Route
+              path="/subscriptions"
+              element={
+                <CoreFrame
+                  element={
+                    <SubscriptionsComponent />
+                  }
+                  headerTitle="Subscriptions"
+                />
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </SettingsWrapper>
     </AppProvider>
   );
 }

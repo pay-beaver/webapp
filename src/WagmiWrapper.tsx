@@ -1,6 +1,10 @@
 import { Hex } from "viem";
 import { polygonMumbai } from "viem/chains";
-import { WagmiConfig, configureChains, createConfig } from "wagmi";
+import {
+  WagmiConfig,
+  configureChains,
+  createConfig,
+} from "wagmi";
 import {
   githubWallet,
   googleWallet,
@@ -11,14 +15,24 @@ import {
   RainbowKitProvider,
   connectorsForWallets,
 } from "@rainbow-me/rainbowkit";
-import { ZERODEV_MUMBAI_PROJECT_ID } from "./types";
+import { ZerodevMumbaiProjectId } from "./types";
 
-export function WagmiWrapper({ children }: { children: React.ReactNode }) {
-  const { chains, publicClient, webSocketPublicClient } = configureChains(
+export function WagmiWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const {
+    chains,
+    publicClient,
+    webSocketPublicClient,
+  } = configureChains(
     [polygonMumbai], // Chain doesn't matter because we use a custom signer later anyway
     [
       jsonRpcProvider({
-        rpc: (chain) => ({ http: "https://rpc-mumbai.maticvigil.com" }), // We only need mumbai
+        rpc: (chain) => ({
+          http: "https://rpc-mumbai.maticvigil.com",
+        }), // We only need mumbai
       }),
     ]
   );
@@ -29,15 +43,21 @@ export function WagmiWrapper({ children }: { children: React.ReactNode }) {
       wallets: [
         googleWallet({
           chains,
-          options: { projectId: ZERODEV_MUMBAI_PROJECT_ID },
+          options: {
+            projectId: ZerodevMumbaiProjectId,
+          },
         }),
         githubWallet({
           chains,
-          options: { projectId: ZERODEV_MUMBAI_PROJECT_ID },
+          options: {
+            projectId: ZerodevMumbaiProjectId,
+          },
         }),
         twitterWallet({
           chains,
-          options: { projectId: ZERODEV_MUMBAI_PROJECT_ID },
+          options: {
+            projectId: ZerodevMumbaiProjectId,
+          },
         }),
       ],
     },
@@ -52,7 +72,10 @@ export function WagmiWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <WagmiConfig config={config}>
-      <RainbowKitProvider chains={chains} modalSize="compact">
+      <RainbowKitProvider
+        chains={chains}
+        modalSize="compact"
+      >
         {children}
       </RainbowKitProvider>
     </WagmiConfig>

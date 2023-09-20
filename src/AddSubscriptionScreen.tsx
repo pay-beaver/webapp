@@ -1,8 +1,13 @@
-import { Button, Select, TextField } from "@shopify/polaris";
+import {
+  Button,
+  Select,
+  TextField,
+} from "@shopify/polaris";
 import { useEffect, useState } from "react";
 import {
   ERC20Token,
-  NATIVE_TOKEN_ADDRESS,
+  NativeTokenAddress,
+  PrimaryColor,
   Subscription,
   SupportedChain,
 } from "./types";
@@ -22,8 +27,15 @@ import {
   makeMultiplePaymentOps,
 } from "./operations";
 import { uploadSubscriptionOpsToServer } from "./serverApi";
-import { useLocation, useNavigate } from "react-router-dom";
-import { secondsToWord, shortenAddress, timestampNow } from "./utils";
+import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import {
+  secondsToWord,
+  shortenAddress,
+  timestampNow,
+} from "./utils";
 import { Header } from "./Header";
 import { getTokenBalances } from "./tokens";
 
@@ -31,40 +43,63 @@ const OPTIONS_FOR_INTERVAL = [
   { label: "Every 5 minutes", value: 60 * 5 },
   { label: "Every hour", value: 60 * 60 },
   { label: "Every day", value: 60 * 60 * 24 },
-  { label: "Every week", value: 60 * 60 * 24 * 7 },
-  { label: "Every month", value: 60 * 60 * 24 * 30 },
-].map((option) => ({ label: option.label, value: option.value.toString() }));
+  {
+    label: "Every week",
+    value: 60 * 60 * 24 * 7,
+  },
+  {
+    label: "Every month",
+    value: 60 * 60 * 24 * 30,
+  },
+].map((option) => ({
+  label: option.label,
+  value: option.value.toString(),
+}));
 
 export function AddSubscriptionScreen() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const chain: SupportedChain = state!.chain;
-  const [availableTokens, setAvailableTokens] = useState<ERC20Token[]>([]);
-  const [selectedToken, setSelectedToken] = useState<ERC20Token | null>(null);
-  const [subscriptionName, setSubscriptionName] = useState<string>("");
-  const [amount, setAmount] = useState<string>("0");
-  const [recipient, setRecipient] = useState<string>("");
-  const [intervalInSeconds, setIntervalInSeconds] = useState<number | null>(
-    null
-  );
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [processingStatusText, setProcessingStatusText] = useState<
-    string | null
-  >(null);
-  const [finishedSigningUp, setFinishedSigningUp] = useState<boolean>(false);
+  const [availableTokens, setAvailableTokens] =
+    useState<ERC20Token[]>([]);
+  const [selectedToken, setSelectedToken] =
+    useState<ERC20Token | null>(null);
+  const [subscriptionName, setSubscriptionName] =
+    useState<string>("");
+  const [amount, setAmount] =
+    useState<string>("0");
+  const [recipient, setRecipient] =
+    useState<string>("");
+  const [
+    intervalInSeconds,
+    setIntervalInSeconds,
+  ] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] =
+    useState<string | null>(null);
+  const [
+    processingStatusText,
+    setProcessingStatusText,
+  ] = useState<string | null>(null);
+  const [
+    finishedSigningUp,
+    setFinishedSigningUp,
+  ] = useState<boolean>(false);
 
   useEffect(() => {
     const tokens = getChainTokens(chain);
     // Remove native token. Should be supported later, but currently is not.
     const tokensWithoutNative = tokens.filter(
-      (token) => token.address !== NATIVE_TOKEN_ADDRESS
+      (token) =>
+        token.address !== NativeTokenAddress
     );
     setAvailableTokens(tokensWithoutNative);
   }, [chain]);
 
   const validateInput = (): Subscription => {
     if (!subscriptionName) {
-      throw new Error("Please enter a subscription name");
+      throw new Error(
+        "Please enter a subscription name"
+      );
     }
     if (!selectedToken) {
       throw new Error("Please select a token");
@@ -76,15 +111,21 @@ export function AddSubscriptionScreen() {
       throw new Error("Please enter a recipient");
     }
     if (!isAddress(recipient)) {
-      throw new Error("Please enter a valid address for the recipient");
+      throw new Error(
+        "Please enter a valid address for the recipient"
+      );
     }
     if (!intervalInSeconds) {
-      throw new Error("Please select an interval");
+      throw new Error(
+        "Please select an interval"
+      );
     }
 
     const parsedAmount = parseFloat(amount);
     if (parsedAmount <= 0) {
-      throw new Error("Amount must be greater than 0");
+      throw new Error(
+        "Amount must be greater than 0"
+      );
     }
 
     return {
@@ -114,7 +155,11 @@ export function AddSubscriptionScreen() {
     );
 
     const tokenBalance = (
-      await getTokenBalances([selectedToken!], chain, getMyAddressStorage()!)
+      await getTokenBalances(
+        [selectedToken!],
+        chain,
+        getMyAddressStorage()!
+      )
     )[0].balance;
     if (tokenBalance < subscription.humanAmount) {
       setErrorMessage(
@@ -124,17 +169,27 @@ export function AddSubscriptionScreen() {
       return;
     }
 
-    const storageEnabled = getStorageSubscriptionsEnabled(chain);
+    const storageEnabled =
+      getStorageSubscriptionsEnabled(chain);
     if (!storageEnabled) {
-      const onChainEnabled = await getOnChainSubscriptionsEnabled(chain);
+      const onChainEnabled =
+        await getOnChainSubscriptionsEnabled(
+          chain
+        );
       if (onChainEnabled) {
-        setStorageSubscriptionsEnabled(true, chain);
+        setStorageSubscriptionsEnabled(
+          true,
+          chain
+        );
       } else {
         setProcessingStatusText(
-          "It is your first subscription, so processing will take a little bit longer."
+          "It is your first subscription, so processing will take a little bit longer. Don't close this page."
         );
         try {
-          await fullySetupSubscriptionsOnChain(chain, selectedToken!);
+          await fullySetupSubscriptionsOnChain(
+            chain,
+            selectedToken!
+          );
         } catch (e: any) {
           setErrorMessage(
             "Top up your wallet with at least 0.004 ETH to start using subscriptions"
@@ -142,37 +197,53 @@ export function AddSubscriptionScreen() {
           setProcessingStatusText(null);
           return;
         }
-        setStorageSubscriptionsEnabled(true, chain);
+        setStorageSubscriptionsEnabled(
+          true,
+          chain
+        );
       }
     }
     storeNewSubscription(subscription);
-    const presignedOps = await makeMultiplePaymentOps(
-      chain,
-      selectedToken!,
-      subscription.humanAmount,
-      subscription.to,
-      subscription.id,
-      subscription.startedAt,
-      subscription.intervalInSeconds,
-      100
-    );
+    const presignedOps =
+      await makeMultiplePaymentOps(
+        chain,
+        selectedToken!,
+        subscription.humanAmount,
+        subscription.to,
+        subscription.id,
+        subscription.startedAt,
+        subscription.intervalInSeconds,
+        100
+      );
     try {
-      await uploadSubscriptionOpsToServer(presignedOps, subscription);
+      await uploadSubscriptionOpsToServer(
+        presignedOps,
+        subscription
+      );
     } catch (e: any) {
-      console.log("Got error while uploading subscription ops", e);
+      console.log(
+        "Got error while uploading subscription ops",
+        e
+      );
       setErrorMessage(
         "Failed to upload user operations. Please try again or contact the team."
       );
       setProcessingStatusText(null);
       return;
     }
-    setProcessingStatusText("Signed you up and scheduled payments!");
+    setProcessingStatusText(
+      "Signed you up and scheduled payments!"
+    );
     addActivityAction({
       chainId: chain.id,
       title: "Started subscription",
-      description: `Started "${subscription.name}" subscription. Paying ${
+      description: `Started "${
+        subscription.name
+      }" subscription. Paying ${
         subscription.humanAmount
-      } ${selectedToken!.symbol} every ${secondsToWord(
+      } ${
+        selectedToken!.symbol
+      } every ${secondsToWord(
         intervalInSeconds!
       )} to ${shortenAddress(subscription.to)}`,
       timestamp: subscription.startedAt,
@@ -183,81 +254,213 @@ export function AddSubscriptionScreen() {
 
   return (
     <div>
-      <Header canGoBack={true} screenTitle="Subscription" />
-      <TextField
-        label="Subscription Name"
+      <p
+        style={{
+          color: "white",
+          marginBottom: 8,
+          width: 400,
+        }}
+      >
+        Subscription Name
+      </p>
+      <input
         autoComplete="off"
         value={subscriptionName}
-        onChange={setSubscriptionName}
+        onChange={(event) =>
+          setSubscriptionName(event.target.value)
+        }
         disabled={processingStatusText !== null}
+        style={{
+          backgroundColor:
+            "rgba(255, 255, 255, 0.2)",
+          color: "white",
+          borderWidth: 0,
+          padding: 8,
+          borderRadius: 6,
+          width: 400,
+        }}
       />
-      <Select
-        label="Token to send"
-        options={availableTokens.map((token) => {
-          return {
-            label: token.name,
-            value: token.address,
-          };
-        })}
-        onChange={(value) => {
+      <p
+        style={{
+          color: "white",
+          marginBottom: 8,
+          marginTop: 24,
+          width: 400,
+        }}
+      >
+        Select token to send
+      </p>
+      <select
+        onChange={(event) => {
           setSelectedToken(
-            availableTokens.find((token) => token.address === value) || null
+            availableTokens.find(
+              (token) =>
+                token.address ===
+                event.target.value
+            ) || null
           );
         }}
         value={selectedToken?.address}
         placeholder="Select token to send"
         disabled={processingStatusText !== null}
-      />
+        style={{
+          padding: 6,
+          borderRadius: 4,
+          backgroundColor:
+            "rgba(255, 255, 255, 0.2)",
+          borderWidth: 0,
+          color: "white",
+          width: 400,
+        }}
+      >
+        <option value={""}>Select token</option>
+        {availableTokens.map((token) => (
+          <option value={token.address}>
+            {token.name}
+          </option>
+        ))}
+      </select>
       <NumberField
         label="Amount to send"
         value={amount}
         onChange={setAmount}
-        disabled={processingStatusText !== null}
       />
-      <Select
-        label="Send every"
-        options={OPTIONS_FOR_INTERVAL}
-        placeholder="Select how often to send"
-        value={intervalInSeconds?.toString()}
-        onChange={(value) => {
-          const interval = parseInt(value, 10);
+      <p
+        style={{
+          color: "white",
+          marginBottom: 8,
+          marginTop: 24,
+          width: 400,
+        }}
+      >
+        Select how often to send
+      </p>
+      <select
+        onChange={(event) => {
+          const interval = parseInt(
+            event.target.value,
+            10
+          );
           if (interval) {
             setIntervalInSeconds(interval);
           }
         }}
+        value={intervalInSeconds?.toString()}
         disabled={processingStatusText !== null}
-      />
-      <TextField
-        label="Send to address"
+        style={{
+          padding: 6,
+          borderRadius: 4,
+          backgroundColor:
+            "rgba(255, 255, 255, 0.2)",
+          borderWidth: 0,
+          color: "white",
+          width: 400,
+        }}
+      >
+        <option value={""}>
+          Select interval
+        </option>
+        {OPTIONS_FOR_INTERVAL.map((option) => (
+          <option value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+
+      <p
+        style={{
+          color: "white",
+          marginBottom: 8,
+          marginTop: 24,
+          width: 400,
+        }}
+      >
+        Send to address
+      </p>
+      <input
         autoComplete="off"
         value={recipient}
-        onChange={setRecipient}
+        onChange={(event) =>
+          setRecipient(event.target.value)
+        }
         disabled={processingStatusText !== null}
+        style={{
+          backgroundColor:
+            "rgba(255, 255, 255, 0.2)",
+          color: "white",
+          borderWidth: 0,
+          padding: 8,
+          borderRadius: 6,
+          width: 400,
+        }}
       />
       {processingStatusText && (
-        <p style={{ textAlign: "center", marginTop: 10 }}>
+        <p
+          style={{
+            textAlign: "center",
+            marginBottom: 8,
+            marginTop: 24,
+            color: "white",
+          }}
+        >
           {processingStatusText}
         </p>
       )}
       {errorMessage && (
-        <p style={{ color: "red", textAlign: "center", marginTop: 10 }}>
+        <p
+          style={{
+            color: "red",
+            textAlign: "center",
+            marginBottom: 8,
+            marginTop: 24,
+          }}
+        >
           {errorMessage}
         </p>
       )}
-      <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          marginTop: 16,
+        }}
+      >
         {!finishedSigningUp && (
-          <Button
-            primary
+          <button
             onClick={() => onDone()}
-            disabled={processingStatusText !== null}
+            disabled={
+              processingStatusText !== null
+            }
+            style={{
+              backgroundColor: `${PrimaryColor}BB`,
+              borderWidth: 0,
+              padding: 8,
+              paddingLeft: 16,
+              paddingRight: 16,
+              borderRadius: 6,
+              color: "white",
+              fontSize: 16,
+            }}
           >
             Done
-          </Button>
+          </button>
         )}
         {finishedSigningUp && (
-          <Button primary onClick={() => navigate(-1)}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              backgroundColor: `${PrimaryColor}BB`,
+              borderWidth: 0,
+              padding: 8,
+              paddingLeft: 16,
+              paddingRight: 16,
+              borderRadius: 6,
+              color: "white",
+              fontSize: 16,
+            }}
+          >
             Return back home
-          </Button>
+          </button>
         )}
       </div>
     </div>

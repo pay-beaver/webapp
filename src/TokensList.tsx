@@ -1,77 +1,165 @@
 import { Box, Button } from "@shopify/polaris";
 import {
-  CHAIN_SETTINGS,
+  ChainsSettings,
   ERC20Token,
-  NATIVE_TOKEN_ADDRESS,
+  NativeTokenAddress,
   OwnedERC20Token,
   SupportedChain,
 } from "./types";
 import { useNavigate } from "react-router-dom";
-import { getChainTokens, getMyAddressStorage } from "./storage";
-import { useEffect, useState } from "react";
-import { getTokenBalances } from "./tokens";
+import {
+  getChainTokens,
+  getMyAddressStorage,
+} from "./storage";
+import {
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import {
+  getTokenBalances,
+  queryTokenIconUrlBySymbol,
+} from "./tokens";
 import { ExternalMinor } from "@shopify/polaris-icons";
+import { SettingsContext } from "./GeneralSettings";
+import { DaiIcon, DefaultIcon } from "./icons";
+import { queryTokenPriceBySymbol } from "./price";
 
 function SingleTokenComponent(props: {
   ownedToken: OwnedERC20Token;
   onSend: (token: ERC20Token) => void;
 }) {
-  const chainSettings = CHAIN_SETTINGS[props.ownedToken.token.chainId];
+  const [iconUrl, setIconUrl] = useState("");
+
+  const chainSettings =
+    ChainsSettings[
+      props.ownedToken.token.chainId
+    ];
   const addressToOpenOnExplorer =
-    props.ownedToken.token.address === NATIVE_TOKEN_ADDRESS
+    props.ownedToken.token.address ===
+    NativeTokenAddress
       ? getMyAddressStorage()!
       : props.ownedToken.token.address;
 
+  const usdValue =
+    props.ownedToken.balance *
+    props.ownedToken.price;
+
+  useEffect(() => {
+    (async () => {
+      const iconUrl =
+        await queryTokenIconUrlBySymbol(
+          props.ownedToken.token.symbol
+        );
+      setIconUrl(iconUrl);
+    })();
+  }, [props.ownedToken.token.symbol]);
+
   return (
-    <div style={{ marginBottom: 8, marginTop: 16 }}>
-      <p style={{ display: "inline" }}>
-        {props.ownedToken.balance.toFixed(6)} {props.ownedToken.token.symbol}
+    <div
+      style={{
+        marginBottom: 8,
+        marginTop: 16,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
+      }}
+    >
+      {iconUrl ? (
+        <img
+          src={iconUrl}
+          alt="Token icon"
+          width={32}
+        />
+      ) : (
+        <DefaultIcon />
+      )}
+      <p
+        style={{
+          display: "inline",
+          color: "white",
+          fontSize: 16,
+          marginLeft: 8,
+        }}
+      >
+        {props.ownedToken.balance.toFixed(6)}{" "}
+        {props.ownedToken.token.symbol}
+      </p>
+      <p
+        style={{
+          color: "white",
+          opacity: 0.5,
+          marginLeft: 8,
+        }}
+      >
+        ~$
+        {usdValue.toFixed(6)}
       </p>
       <div
         onClick={() =>
           window.open(
-            chainSettings.explorer + "address/" + addressToOpenOnExplorer
+            chainSettings.explorer +
+              "address/" +
+              addressToOpenOnExplorer
           )
         }
         style={{
           display: "inline",
           marginLeft: 8,
         }}
+      ></div>
+      <button
+        onClick={() =>
+          props.onSend(props.ownedToken.token)
+        }
+        style={{
+          padding: 8,
+          paddingLeft: 12,
+          paddingRight: 12,
+          borderRadius: 8,
+          borderWidth: 0,
+          backgroundColor:
+            "rgba(255, 255, 255, 0.1)",
+          marginLeft: "auto",
+          color: "white",
+        }}
       >
-        <ExternalMinor width="20px" />
-      </div>
-      <div style={{ display: "inline", float: "right" }}>
-        <Button
-          size="micro"
-          onClick={() => props.onSend(props.ownedToken.token)}
-        >
-          Send
-        </Button>
-      </div>
+        Send
+      </button>
     </div>
   );
 }
 
-export function TokensListComponent(props: { chain: SupportedChain }) {
+export function TokensListComponent() {
   const navigate = useNavigate();
-  const [tokens, setTokens] = useState<OwnedERC20Token[]>([]);
+  const { chain } = useContext(SettingsContext);
+  const [tokens, setTokens] = useState<
+    OwnedERC20Token[]
+  >([]);
 
   useEffect(() => {
     (async () => {
-      const pureTokens = await getChainTokens(props.chain);
-      const tokensWithBalances = await getTokenBalances(
-        pureTokens,
-        props.chain,
-        getMyAddressStorage()!
+      const pureTokens = await getChainTokens(
+        chain
       );
+      const tokensWithBalances =
+        await getTokenBalances(
+          pureTokens,
+          chain,
+          getMyAddressStorage()!
+        );
 
       // Put native token on top
       // Then put tokens with balance on top
       tokensWithBalances.sort((a, b) => {
-        if (a.token.address === NATIVE_TOKEN_ADDRESS) {
+        if (
+          a.token.address === NativeTokenAddress
+        ) {
           return -1;
         }
-        if (b.token.address === NATIVE_TOKEN_ADDRESS) {
+        if (
+          b.token.address === NativeTokenAddress
+        ) {
           return 1;
         }
         if (a.balance > 0 && b.balance === 0) {
@@ -84,24 +172,50 @@ export function TokensListComponent(props: { chain: SupportedChain }) {
       });
       setTokens(tokensWithBalances);
     })();
-  }, [props.chain]);
+  }, [chain]);
 
   const onSend = (token: ERC20Token) => {
     navigate("/send", { state: { token } });
   };
 
   return (
-    <Box>
-      <Button
+    <div style={{ marginTop: 40 }}>
+      <p
+        style={{
+          color: "white",
+          fontSize: 32,
+          marginBottom: 20,
+          marginRight: 20,
+          display: "inline-block",
+        }}
+      >
+        Tokens
+      </p>
+      <button
         onClick={() =>
-          navigate("/import-token", { state: { chain: props.chain } })
+          navigate("/import-token", {
+            state: { chain: chain },
+          })
         }
+        style={{
+          padding: 10,
+          fontSize: 12,
+          borderRadius: 12,
+          borderWidth: 0,
+          color: "white",
+          backgroundColor:
+            "rgba(255, 255, 255, 0.1)",
+        }}
       >
         Import token
-      </Button>
+      </button>
       {tokens.map((token, index) => (
-        <SingleTokenComponent key={index} ownedToken={token} onSend={onSend} />
+        <SingleTokenComponent
+          key={index}
+          ownedToken={token}
+          onSend={onSend}
+        />
       ))}
-    </Box>
+    </div>
   );
 }

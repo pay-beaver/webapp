@@ -10,17 +10,42 @@ export default function NumberField(props: {
   placeholder?: string;
 }) {
   return (
-    <TextField
-      label={props.label}
-      value={props.value ? props.value : ""}
-      onChange={(value) => {
-        const regexpResult = NUMBER_VALIDATION_REGEX.exec(value);
-        if (regexpResult?.length !== 1 || regexpResult[0] !== value) return;
-        props.onChange(value);
+    <div
+      style={{
+        color: "white",
+        marginBottom: 8,
+        marginTop: 24,
       }}
-      autoComplete="off"
-      disabled={props.disabled}
-      placeholder={props.placeholder}
-    />
+    >
+      <p style={{ color: "white" }}>
+        {props.label}
+      </p>
+      <input
+        value={props.value ? props.value : ""}
+        onChange={(event) => {
+          const regexpResult =
+            NUMBER_VALIDATION_REGEX.exec(
+              event.target.value
+            );
+          if (
+            regexpResult?.length !== 1 ||
+            regexpResult[0] !== event.target.value
+          )
+            return;
+          props.onChange(event.target.value);
+        }}
+        autoComplete="off"
+        disabled={props.disabled}
+        placeholder={props.placeholder}
+        style={{
+          padding: 6,
+          borderRadius: 4,
+          backgroundColor:
+            "rgba(255, 255, 255, 0.2)",
+          borderWidth: 0,
+          color: "white",
+        }}
+      />
+    </div>
   );
 }

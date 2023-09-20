@@ -18,8 +18,9 @@ import {
 import { useNavigate } from "react-router-dom";
 import { getMyAddressFromOwner } from "./operations";
 import {
-  CHAIN_SETTINGS,
-  SUPPORTED_CHAINS_LIST,
+  ChainsSettings,
+  PrimaryColor,
+  SupportedChainsList,
 } from "./types";
 import { Web3Auth } from "@web3auth/modal";
 
@@ -66,8 +67,12 @@ function SocialWalletLoginScreen(props: {
   };
 
   return (
-    <div>
-      <p style={{ marginTop: "20px" }}>
+    <div style={{ color: "white" }}>
+      <p
+        style={{
+          marginTop: "20px",
+        }}
+      >
         Welcome to Beaver Wallet! A wallet that
         makes interaction with blockchains easy
         while keeping it secure. Key features:
@@ -112,9 +117,21 @@ function SocialWalletLoginScreen(props: {
             }}
           >
             {web3authInitialized ? (
-              <Button primary onClick={onLogin}>
+              <button
+                onClick={onLogin}
+                style={{
+                  padding: 8,
+                  paddingLeft: 16,
+                  paddingRight: 16,
+                  borderRadius: 6,
+                  borderWidth: 0,
+                  backgroundColor: `${PrimaryColor}BB`,
+                  color: "white",
+                  fontSize: 16,
+                }}
+              >
                 Log in
-              </Button>
+              </button>
             ) : (
               <Spinner size="small" />
             )}
@@ -125,7 +142,7 @@ function SocialWalletLoginScreen(props: {
                   navigate("/private-key-login")
                 }
                 style={{
-                  color: "blue",
+                  color: PrimaryColor,
                   textDecoration: "underline",
                 }}
               >
@@ -156,20 +173,20 @@ export function LoginScreen() {
 
     // Probably should move somewhere else?
     // Ensuring that there are some default tokens for the users to explore.
-    SUPPORTED_CHAINS_LIST.forEach((chain) => {
+    SupportedChainsList.forEach((chain) => {
       const defaultTokens =
-        CHAIN_SETTINGS[chain.id]
+        ChainsSettings[chain.id]
           .defaultERC20Tokens;
       defaultTokens.forEach((token) =>
         storeNewToken(token)
       );
     });
-    navigate("/home");
+    navigate("/overview");
   };
 
   useEffect(() => {
     if (getPrivateKeyStorage() !== null) {
-      navigate("/home"); // we are fully logged in
+      navigate("/overview"); // we are fully logged in
     }
     const privateKey = getPrivateKeyStorage();
     if (privateKey !== null) {
@@ -183,14 +200,8 @@ export function LoginScreen() {
   };
 
   return (
-    <div>
-      <Header
-        canGoBack={false}
-        screenTitle="Beaver (ex. Abstract) Wallet"
-      />
-      <SocialWalletLoginScreen
-        onLogedIn={onLoggedIn}
-      />
-    </div>
+    <SocialWalletLoginScreen
+      onLogedIn={onLoggedIn}
+    />
   );
 }

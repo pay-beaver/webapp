@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Dark1Color, Dark2Color } from "./types";
 import {
   useLocation,
   useNavigate,
   useNavigation,
 } from "react-router-dom";
+import { SettingsContext } from "./GeneralSettings";
 
 function NavigationItem(props: {
   title: string;
@@ -51,12 +52,18 @@ const Pages = [
 ];
 
 export function Navigation() {
+  const { isLoggedIn } = useContext(
+    SettingsContext
+  );
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
   const onNavigationClick = (
     targetPage: string
-  ) => navigate(targetPage);
+  ) => {
+    if (!isLoggedIn) return;
+    navigate(targetPage);
+  };
 
   return (
     <div

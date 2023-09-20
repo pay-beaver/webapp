@@ -1,6 +1,7 @@
 import { Button } from "@shopify/polaris";
 import { Header } from "./Header";
 import {
+  clearMyAddressStorage,
   clearPrivateKeyStorage,
   getPrivateKeyStorage,
 } from "./storage";
@@ -11,6 +12,7 @@ export function SettingsScreen() {
     useState<string>("");
 
   const onLogOut = () => {
+    clearMyAddressStorage();
     clearPrivateKeyStorage();
     window.location.href = "/";
   };

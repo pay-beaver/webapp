@@ -6,6 +6,7 @@ import {
 } from "./types";
 import {
   getCurrentChain,
+  getMyAddressStorage,
   setCurrentChain,
 } from "./storage";
 
@@ -21,12 +22,18 @@ export function SettingsWrapper({
   const [chain, setChain] =
     useState<SupportedChain>(getCurrentChain());
 
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    getMyAddressStorage() !== null
+  );
+
   const settings = {
     chain,
     setChain: (chainId: number) => {
       setCurrentChain(chainId);
       setChain(getCurrentChain());
     },
+    isLoggedIn,
+    setIsLoggedIn,
   };
 
   return (
